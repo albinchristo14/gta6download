@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a statically-generated Next.js + MDX SEO hub for GTA 6 download-related search terms, with an AI-assisted RSS news pipeline (drafts only), an honest Download Status hub, affiliate + display-ad monetization, content silos, a download-page family (honest framing for no-product terms), expanded JSON-LD schema, and a topic-queue mode for programmatic page drafting. Tasks 1–13 are v1; Tasks 14–19 are the v2 expansion.
+**Goal:** Build a statically-generated Next.js + MDX SEO hub for GTA 6 download-related search terms, with an AI-assisted RSS news pipeline (drafts only), an honest Download Status hub, affiliate + display-ad monetization, content silos, a download-page family (honest framing for no-product terms), expanded JSON-LD schema, and a topic-queue mode for programmatic page drafting. Tasks 1–13 are v1; Tasks 14–19 are the v2 expansion; Tasks 20–23 are the v3 expansion (data-gated programmatic generator + FPS estimator / PC requirement checker tools).
 
 **Architecture:** A Next.js App Router site renders MDX content files at build time (static = fast = good Core Web Vitals). A separate Node script (`scripts/ingest.ts`) fetches gaming RSS feeds, filters for genuine GTA 6 items, drafts original rewrites via the Claude API, and writes **drafts only** into `content/drafts/`. Nothing publishes without a human moving a draft to `content/posts/` and committing. Monetization (affiliate links, ad slots, email capture) is centralized in config files so a single edit updates every page.
 
@@ -3598,12 +3598,768 @@ git commit -m "feat: add topic-queue mode for programmatic page drafting (drafts
 
 ---
 
+## v3 — Data-Gated Programmatic Generator + Interactive Tools
+
+Extends v1/v2. **LOCKED rule (from spec):** a programmatic page is `index`-able and in the sitemap
+**only when** it has both a structured data row AND a human-reviewed body. Missing either → `noindex`,
+excluded from sitemap. This is how "thousands of pages" stays survivable on a new domain.
+
+### Task 20: Programmatic data layer + page-readiness gate
+
+**Files:**
+- Create: `data/gpus.json`, `data/errors.json`
+- Create: `lib/pseo.ts`
+- Test: `lib/pseo.test.ts`
+
+**Interfaces:**
+- Consumes: `getAllPosts` (for body lookup), `frontmatterSchema` indirectly.
+- Produces:
+  - `export interface PseoFamily { id: string; label: string; routeBase: string; dataFile: string }`
+  - `export const pseoFamilies: PseoFamily[]` (gpu, error — extensible).
+  - `export interface PseoRow { slug: string; name: string; [k: string]: unknown }`
+  - `export function loadRows(family: PseoFamily): PseoRow[]` — reads the family's JSON.
+  - `export function bodySlugFor(family: PseoFamily, row: PseoRow): string` — the MDX slug a reviewed body must use (`<family.id>-<row.slug>`).
+  - `export function isReady(family: PseoFamily, row: PseoRow, publishedSlugs: Set<string>): boolean` — true only if a published post exists at `bodySlugFor(...)`. Drives index/noindex.
+
+- [ ] **Step 1: Create the data files**
+
+`data/gpus.json`:
+```json
+[
+  { "slug": "rtx-4060", "name": "NVIDIA RTX 4060", "vramGb": 8, "tier": "mainstream" },
+  { "slug": "rtx-3060-ti", "name": "NVIDIA RTX 3060 Ti", "vramGb": 8, "tier": "mainstream" },
+  { "slug": "rtx-4070", "name": "NVIDIA RTX 4070", "vramGb": 12, "tier": "high" },
+  { "slug": "rx-7600", "name": "AMD Radeon RX 7600", "vramGb": 8, "tier": "mainstream" }
+]
+```
+
+`data/errors.json`:
+```json
+[
+  { "slug": "game-wont-launch", "name": "GTA 6 won't launch", "category": "errors" },
+  { "slug": "black-screen", "name": "GTA 6 black screen on startup", "category": "errors" },
+  { "slug": "directx-error", "name": "GTA 6 DirectX error", "category": "errors" }
+]
+```
+
+- [ ] **Step 2: Write the failing test**
+
+`lib/pseo.test.ts`:
+```ts
+import { describe, it, expect } from "vitest";
+import { pseoFamilies, loadRows, bodySlugFor, isReady } from "./pseo";
+
+describe("pseo data layer", () => {
+  it("families have unique ids and route bases", () => {
+    const ids = pseoFamilies.map((f) => f.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("loadRows returns rows with slug + name", () => {
+    const gpu = pseoFamilies.find((f) => f.id === "gpu")!;
+    const rows = loadRows(gpu);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0].slug).toBeTruthy();
+    expect(rows[0].name).toBeTruthy();
+  });
+
+  it("bodySlugFor namespaces by family id", () => {
+    const gpu = pseoFamilies.find((f) => f.id === "gpu")!;
+    expect(bodySlugFor(gpu, { slug: "rtx-4060", name: "x" })).toBe("gpu-rtx-4060");
+  });
+
+  it("isReady is true only when a published body slug exists", () => {
+    const gpu = pseoFamilies.find((f) => f.id === "gpu")!;
+    const row = { slug: "rtx-4060", name: "x" };
+    expect(isReady(gpu, row, new Set(["gpu-rtx-4060"]))).toBe(true);
+    expect(isReady(gpu, row, new Set())).toBe(false);
+  });
+});
+```
+
+- [ ] **Step 3: Run to verify it fails**
+
+Run: `npm test -- lib/pseo.test.ts`
+Expected: FAIL — cannot resolve `./pseo`.
+
+- [ ] **Step 4: Write `lib/pseo.ts`**
+
+```ts
+import fs from "node:fs";
+import path from "node:path";
+
+export interface PseoFamily {
+  id: string;
+  label: string;
+  routeBase: string;
+  dataFile: string;
+}
+
+export interface PseoRow {
+  slug: string;
+  name: string;
+  [k: string]: unknown;
+}
+
+export const pseoFamilies: PseoFamily[] = [
+  { id: "gpu", label: "GPU", routeBase: "gpu", dataFile: "gpus.json" },
+  { id: "error", label: "Error", routeBase: "error", dataFile: "errors.json" },
+];
+
+export function loadRows(family: PseoFamily): PseoRow[] {
+  const file = path.join(process.cwd(), "data", family.dataFile);
+  if (!fs.existsSync(file)) return [];
+  const rows = JSON.parse(fs.readFileSync(file, "utf8")) as PseoRow[];
+  return rows.filter((r) => r.slug && r.name);
+}
+
+export function bodySlugFor(family: PseoFamily, row: PseoRow): string {
+  return `${family.id}-${row.slug}`;
+}
+
+export function isReady(family: PseoFamily, row: PseoRow, publishedSlugs: Set<string>): boolean {
+  return publishedSlugs.has(bodySlugFor(family, row));
+}
+```
+
+- [ ] **Step 5: Run to verify it passes**
+
+Run: `npm test -- lib/pseo.test.ts`
+Expected: PASS (4 tests).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add data/gpus.json data/errors.json lib/pseo.ts lib/pseo.test.ts
+git commit -m "feat: add programmatic data layer with readiness gate"
+```
+
+---
+
+### Task 21: Programmatic page route (index-gated by readiness)
+
+**Files:**
+- Create: `app/[family]/[item]/page.tsx`
+- Modify: `app/sitemap.ts` (add only READY programmatic pages)
+
+**Interfaces:**
+- Consumes: `pseoFamilies`, `loadRows`, `bodySlugFor`, `isReady` (Task 20), `getAllPosts`/`getPostBySlug` (Task 3), `next-mdx-remote/rsc`, `articleJsonLd`/`breadcrumbJsonLd`.
+- Produces: dynamic route `/<family.routeBase>/<row.slug>` (e.g. `/gpu/rtx-4060`). If a reviewed body exists → render it, `index`. If not → render a minimal placeholder with `robots: noindex`. `generateStaticParams` enumerates all rows (so URLs are stable), but only READY ones are indexed + in the sitemap.
+
+- [ ] **Step 1: Write `app/[family]/[item]/page.tsx`**
+
+```tsx
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import { pseoFamilies, loadRows, bodySlugFor, type PseoFamily, type PseoRow } from "@/lib/pseo";
+import { getPostBySlug, getAllPosts } from "@/lib/posts";
+import { siteConfig } from "@/site.config";
+import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
+
+function resolve(familyId: string, item: string): { family: PseoFamily; row: PseoRow } | null {
+  const family = pseoFamilies.find((f) => f.routeBase === familyId);
+  if (!family) return null;
+  const row = loadRows(family).find((r) => r.slug === item);
+  if (!row) return null;
+  return { family, row };
+}
+
+export function generateStaticParams() {
+  return pseoFamilies.flatMap((family) =>
+    loadRows(family).map((row) => ({ family: family.routeBase, item: row.slug }))
+  );
+}
+
+export function generateMetadata({ params }: { params: { family: string; item: string } }): Metadata {
+  const resolved = resolve(params.family, params.item);
+  if (!resolved) return {};
+  const { family, row } = resolved;
+  const body = getPostBySlug(bodySlugFor(family, row));
+  const title = `GTA 6 on ${row.name}`;
+  const base: Metadata = {
+    title,
+    description: `GTA 6 ${family.label.toLowerCase()} details for ${row.name}.`,
+    alternates: { canonical: `/${family.routeBase}/${row.slug}` },
+  };
+  // No reviewed body yet → keep it out of the index.
+  if (!body) return { ...base, robots: { index: false, follow: true } };
+  return {
+    ...base,
+    title: body.frontmatter.title,
+    description: body.frontmatter.description,
+  };
+}
+
+export default function PseoPage({ params }: { params: { family: string; item: string } }) {
+  const resolved = resolve(params.family, params.item);
+  if (!resolved) notFound();
+  const { family, row } = resolved;
+  const body = getPostBySlug(bodySlugFor(family, row));
+
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", url: siteConfig.url },
+              { name: family.label, url: `${siteConfig.url}/${family.routeBase}` },
+              { name: row.name, url: `${siteConfig.url}/${family.routeBase}/${row.slug}` },
+            ])
+          ),
+        }}
+      />
+      <h1 className="text-3xl font-bold">GTA 6 on {row.name}</h1>
+
+      {body ? (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd(body.frontmatter)) }}
+          />
+          <div className="prose mt-6 max-w-none">
+            <MDXRemote source={body.content} />
+          </div>
+        </>
+      ) : (
+        <p className="mt-4 text-neutral-600">
+          We’re still preparing detailed information for {row.name}. Check back soon — this page will
+          be updated with verified data.
+        </p>
+      )}
+    </main>
+  );
+}
+```
+
+> Note on routing: `[family]/[item]` is a two-segment dynamic route, so it only matches two-segment
+> paths (`/gpu/rtx-4060`). It will not collide with single-segment routes like `/news` or the
+> `[downloadSlug]` route from Task 16 (that one is single-segment). The silo index routes
+> (`/downloads`, `/requirements`, etc.) are also single-segment, so no collision. A reviewed body for
+> a programmatic page lives in `content/posts/` under slug `<family>-<item>` (e.g. `gpu-rtx-4060`);
+> editorial sets its `category` appropriately (e.g. `requirements` for GPU pages).
+
+- [ ] **Step 2: Add READY programmatic pages to the sitemap**
+
+In `app/sitemap.ts`, add imports:
+```ts
+import { pseoFamilies, loadRows, bodySlugFor } from "@/lib/pseo";
+import { getAllPosts } from "@/lib/posts"; // already imported — keep one copy
+```
+In `sitemap()`, before the return, add:
+```ts
+  const publishedSlugs = new Set(getAllPosts().map((p) => p.slug));
+  const pseoEntries = pseoFamilies.flatMap((family) =>
+    loadRows(family)
+      .filter((row) => publishedSlugs.has(bodySlugFor(family, row))) // READY only
+      .map((row) => ({
+        url: `${siteConfig.url}/${family.routeBase}/${row.slug}`,
+        lastModified: new Date(),
+      }))
+  );
+```
+And include them in the return:
+```ts
+  return [...staticEntries, ...downloadEntries, ...pseoEntries, ...postEntries];
+```
+
+- [ ] **Step 3: Run the build**
+
+Run: `npm run build`
+Expected: build succeeds; `/gpu/[item]` and `/error/[item]` routes generated for every data row;
+none are in the sitemap yet (no reviewed bodies exist) — confirm by checking the build output / that
+`pseoEntries` is empty until a `gpu-*`/`error-*` post is published.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add "app/[family]/[item]/page.tsx" app/sitemap.ts
+git commit -m "feat: add data-gated programmatic page route (noindex until reviewed body exists)"
+```
+
+---
+
+### Task 22: Programmatic family generator in the ingest pipeline
+
+**Files:**
+- Modify: `scripts/ingest.ts` (add a programmatic pass)
+- Modify: `scripts/draft.ts` (add `draftFromPseoRow`)
+- Test: `scripts/draft.test.ts` (add a `draftFromPseoRow` case)
+
+**Interfaces:**
+- Consumes: `pseoFamilies`/`loadRows`/`bodySlugFor` (Task 20), `AnthropicLike`/`DraftArticle` (Task 12).
+- Produces:
+  - `scripts/draft.ts`: `export async function draftFromPseoRow(family: { id: string; label: string }, row: { slug: string; name: string }, client: AnthropicLike, model: string): Promise<DraftArticle>` — drafts a unique body for one data row; forces the slug to `<family.id>-<row.slug>` so the route can find it.
+  - `scripts/ingest.ts`: a third pass that, for each family row not already in `.seen.json` (keyed `pseo:<family>-<slug>`), drafts a body **to `content/drafts/`** (drafts-only) with the right `category`. You review, move to `content/posts/`, and the page flips from `noindex` to indexed automatically.
+
+- [ ] **Step 1: Add the failing `draftFromPseoRow` test**
+
+Append to `scripts/draft.test.ts`:
+```ts
+import { draftFromPseoRow } from "./draft";
+
+describe("draftFromPseoRow", () => {
+  const fakeJson = JSON.stringify({
+    title: "GTA 6 on RTX 4060 — Projected Performance",
+    slug: "ignored-the-generator-overrides-this",
+    description: "Projected FPS and settings.",
+    body: "Projection analysis.",
+    tags: ["gta6", "benchmark"],
+  });
+  const fakeClient = {
+    messages: { create: async () => ({ content: [{ type: "text", text: fakeJson }] }) },
+  };
+
+  it("forces the slug to <family>-<row>", async () => {
+    const draft = await draftFromPseoRow(
+      { id: "gpu", label: "GPU" },
+      { slug: "rtx-4060", name: "NVIDIA RTX 4060" },
+      fakeClient,
+      "claude-opus-4-8"
+    );
+    expect(draft.slug).toBe("gpu-rtx-4060");
+    expect(draft.title).toContain("RTX 4060");
+  });
+});
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `npm test -- scripts/draft.test.ts`
+Expected: FAIL — `draftFromPseoRow` not exported.
+
+- [ ] **Step 3: Add `draftFromPseoRow` to `scripts/draft.ts`**
+
+Append:
+```ts
+const PSEO_SYSTEM = `You are an editorial assistant for a GTA 6 site. Write an ORIGINAL, accurate
+article about GTA 6 in the context of a specific item (a GPU, CPU, error, platform, etc.). Since GTA 6
+is not yet released, frame performance figures as PROJECTIONS, never as confirmed benchmarks. Never
+fabricate specific numbers as fact. Respond ONLY with JSON:
+{"title": string, "slug": string, "description": string, "body": string (markdown), "tags": string[]}.`;
+
+export async function draftFromPseoRow(
+  family: { id: string; label: string },
+  row: { slug: string; name: string },
+  client: AnthropicLike,
+  model: string
+): Promise<DraftArticle> {
+  const userPrompt = `Item type: ${family.label}
+Item: ${row.name}
+Write a GTA 6 article focused on "${row.name}" (400-700 words). For hardware, give projected
+performance framed as estimates. For errors, give an accurate troubleshooting guide. Output JSON only.`;
+
+  const response = await client.messages.create({
+    model,
+    max_tokens: 16000,
+    system: PSEO_SYSTEM,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  const text = response.content.find((b) => b.type === "text" && b.text)?.text;
+  if (!text) throw new Error(`draftFromPseoRow: model returned no text for ${family.id}-${row.slug}`);
+
+  let parsed: Partial<DraftArticle>;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`draftFromPseoRow: model output was not valid JSON for ${family.id}-${row.slug}`);
+  }
+
+  // Force the slug so the programmatic route can locate this body.
+  return {
+    title: parsed.title ?? `GTA 6 on ${row.name}`,
+    slug: `${family.id}-${row.slug}`,
+    description: parsed.description ?? "",
+    body: parsed.body ?? "",
+    tags: Array.isArray(parsed.tags) ? parsed.tags : ["gta6"],
+  };
+}
+```
+
+- [ ] **Step 4: Run to verify the draft tests pass**
+
+Run: `npm test -- scripts/draft.test.ts`
+Expected: PASS (previous 3 + new 1 = 4).
+
+- [ ] **Step 5: Add the programmatic pass to `scripts/ingest.ts`**
+
+Add imports:
+```ts
+import { pseoFamilies, loadRows } from "@/lib/pseo";
+import { draftFromPseoRow } from "./draft";
+```
+> Note: `scripts/` files import `@/lib/pseo` via the `@` alias — `tsx` resolves it from `tsconfig.json`
+> `paths`. If `tsx` doesn't pick up the alias at runtime, change this one import to a relative path
+> `../lib/pseo` (the only `scripts → lib` import in the pipeline).
+
+Add a helper above `main()`:
+```ts
+function pseoKey(familyId: string, rowSlug: string): string {
+  return `pseo:${familyId}-${rowSlug}`;
+}
+
+function categoryForFamily(familyId: string): string {
+  return familyId === "error" ? "errors" : "requirements";
+}
+```
+Inside `main()`, after the topic pass and **before** `saveSeen(seen)`, add:
+```ts
+  for (const family of pseoFamilies) {
+    for (const row of loadRows(family)) {
+      const key = pseoKey(family.id, row.slug);
+      if (seen.has(key)) continue;
+      try {
+        const draft = await draftFromPseoRow(family, row, client, model);
+        const mdx = toMdxWithCategory(
+          toMdx(
+            draft,
+            { title: row.name, link: siteConfig.url, contentSnippet: "", sourceFeed: `pseo:${family.id}` },
+            dateISO
+          ),
+          categoryForFamily(family.id)
+        );
+        const file = path.join(DRAFTS_DIR, draftFilename(draft.slug, dateISO));
+        fs.writeFileSync(file, mdx);
+        seen.add(key);
+        written++;
+        console.log(`[ingest] wrote pseo draft: ${path.basename(file)}`);
+      } catch (err) {
+        console.warn(`[ingest] pseo draft failed for ${family.id}-${row.slug}: ${(err as Error).message}`);
+      }
+    }
+  }
+```
+> This reuses `toMdxWithCategory`, `toMdx`, `draftFilename`, `siteConfig`, and `dateISO` already in
+> `ingest.ts` from Task 19. Drafts land in `content/drafts/` only — review then move to
+> `content/posts/` to publish (which flips the page from `noindex` to indexed).
+
+- [ ] **Step 6: Run the full suite and build**
+
+Run: `npm test && npm run build`
+Expected: all tests pass; build succeeds.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add scripts/draft.ts scripts/draft.test.ts scripts/ingest.ts
+git commit -m "feat: add programmatic-family drafting pass (data rows to drafts-only)"
+```
+
+---
+
+### Task 23: Interactive tools — FPS estimator + PC requirement checker
+
+**Files:**
+- Create: `lib/fps.ts`
+- Test: `lib/fps.test.ts`
+- Create: `components/FpsEstimator.tsx`
+- Create: `components/RequirementChecker.tsx`
+- Create: `app/tools/fps-estimator/page.tsx`
+- Create: `app/tools/can-i-run-gta-6/page.tsx`
+- Modify: `app/sitemap.ts` (add the two tool routes)
+
+**Interfaces:**
+- Consumes: `loadRows` for `gpu` family + a small CPU table (defined inline in `lib/fps.ts`).
+- Produces:
+  - `lib/fps.ts`: `export interface HardwareInput { gpuTier: "entry" | "mainstream" | "high" | "ultra"; cpuTier: "low" | "mid" | "high"; resolution: "1080p" | "1440p" | "4k" }`; `export function estimateFps(input: HardwareInput): { fps: number; note: string }` (pure, projection-based, clearly labeled); `export function meetsMinimum(input: HardwareInput): { passes: boolean; reason: string }`.
+  - `<FpsEstimator />`, `<RequirementChecker />` — client components wrapping the pure functions.
+  - `/tools/fps-estimator` and `/tools/can-i-run-gta-6` pages.
+
+- [ ] **Step 1: Write the failing test**
+
+`lib/fps.test.ts`:
+```ts
+import { describe, it, expect } from "vitest";
+import { estimateFps, meetsMinimum } from "./fps";
+
+describe("estimateFps", () => {
+  it("higher tiers and lower resolutions yield more fps", () => {
+    const low = estimateFps({ gpuTier: "entry", cpuTier: "low", resolution: "4k" });
+    const high = estimateFps({ gpuTier: "ultra", cpuTier: "high", resolution: "1080p" });
+    expect(high.fps).toBeGreaterThan(low.fps);
+    expect(low.fps).toBeGreaterThan(0);
+  });
+
+  it("always returns a projection note", () => {
+    const r = estimateFps({ gpuTier: "mainstream", cpuTier: "mid", resolution: "1440p" });
+    expect(r.note.toLowerCase()).toContain("estimate");
+  });
+});
+
+describe("meetsMinimum", () => {
+  it("entry hardware at 4k fails minimum", () => {
+    expect(meetsMinimum({ gpuTier: "entry", cpuTier: "low", resolution: "4k" }).passes).toBe(false);
+  });
+  it("mainstream+ at 1080p passes", () => {
+    expect(meetsMinimum({ gpuTier: "mainstream", cpuTier: "mid", resolution: "1080p" }).passes).toBe(true);
+  });
+});
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `npm test -- lib/fps.test.ts`
+Expected: FAIL — cannot resolve `./fps`.
+
+- [ ] **Step 3: Write `lib/fps.ts`**
+
+```ts
+export interface HardwareInput {
+  gpuTier: "entry" | "mainstream" | "high" | "ultra";
+  cpuTier: "low" | "mid" | "high";
+  resolution: "1080p" | "1440p" | "4k";
+}
+
+const GPU_BASE: Record<HardwareInput["gpuTier"], number> = {
+  entry: 35,
+  mainstream: 60,
+  high: 90,
+  ultra: 120,
+};
+
+const CPU_MULT: Record<HardwareInput["cpuTier"], number> = {
+  low: 0.8,
+  mid: 1.0,
+  high: 1.1,
+};
+
+const RES_MULT: Record<HardwareInput["resolution"], number> = {
+  "1080p": 1.0,
+  "1440p": 0.7,
+  "4k": 0.45,
+};
+
+const PROJECTION_NOTE =
+  "These figures are projected estimates based on the announced console target and comparable open-world titles. GTA 6 is not yet released; no official PC benchmarks exist.";
+
+export function estimateFps(input: HardwareInput): { fps: number; note: string } {
+  const fps = Math.round(GPU_BASE[input.gpuTier] * CPU_MULT[input.cpuTier] * RES_MULT[input.resolution]);
+  return { fps, note: PROJECTION_NOTE };
+}
+
+export function meetsMinimum(input: HardwareInput): { passes: boolean; reason: string } {
+  const { fps } = estimateFps(input);
+  if (fps >= 30) {
+    return { passes: true, reason: `Projected ~${fps} FPS — should meet the minimum for a playable experience.` };
+  }
+  return { passes: false, reason: `Projected ~${fps} FPS — likely below a comfortable minimum at these settings. Try a lower resolution.` };
+}
+```
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `npm test -- lib/fps.test.ts`
+Expected: PASS (4 tests).
+
+- [ ] **Step 5: Write `components/FpsEstimator.tsx`**
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { estimateFps, type HardwareInput } from "@/lib/fps";
+
+export function FpsEstimator() {
+  const [input, setInput] = useState<HardwareInput>({
+    gpuTier: "mainstream",
+    cpuTier: "mid",
+    resolution: "1080p",
+  });
+  const result = estimateFps(input);
+
+  const set = <K extends keyof HardwareInput>(k: K, v: HardwareInput[K]) =>
+    setInput((prev) => ({ ...prev, [k]: v }));
+
+  return (
+    <div className="rounded-lg border border-neutral-200 p-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="text-sm">
+          GPU tier
+          <select
+            className="mt-1 block w-full rounded border px-2 py-1"
+            value={input.gpuTier}
+            onChange={(e) => set("gpuTier", e.target.value as HardwareInput["gpuTier"])}
+          >
+            <option value="entry">Entry</option>
+            <option value="mainstream">Mainstream</option>
+            <option value="high">High</option>
+            <option value="ultra">Ultra</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          CPU tier
+          <select
+            className="mt-1 block w-full rounded border px-2 py-1"
+            value={input.cpuTier}
+            onChange={(e) => set("cpuTier", e.target.value as HardwareInput["cpuTier"])}
+          >
+            <option value="low">Low</option>
+            <option value="mid">Mid</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          Resolution
+          <select
+            className="mt-1 block w-full rounded border px-2 py-1"
+            value={input.resolution}
+            onChange={(e) => set("resolution", e.target.value as HardwareInput["resolution"])}
+          >
+            <option value="1080p">1080p</option>
+            <option value="1440p">1440p</option>
+            <option value="4k">4K</option>
+          </select>
+        </label>
+      </div>
+      <p className="mt-4 text-2xl font-bold">~{result.fps} FPS (projected)</p>
+      <p className="mt-2 text-xs text-neutral-500">{result.note}</p>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 6: Write `components/RequirementChecker.tsx`**
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { meetsMinimum, type HardwareInput } from "@/lib/fps";
+
+export function RequirementChecker() {
+  const [input, setInput] = useState<HardwareInput>({
+    gpuTier: "mainstream",
+    cpuTier: "mid",
+    resolution: "1080p",
+  });
+  const result = meetsMinimum(input);
+  const set = <K extends keyof HardwareInput>(k: K, v: HardwareInput[K]) =>
+    setInput((prev) => ({ ...prev, [k]: v }));
+
+  return (
+    <div className="rounded-lg border border-neutral-200 p-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="text-sm">
+          GPU tier
+          <select className="mt-1 block w-full rounded border px-2 py-1" value={input.gpuTier}
+            onChange={(e) => set("gpuTier", e.target.value as HardwareInput["gpuTier"])}>
+            <option value="entry">Entry</option>
+            <option value="mainstream">Mainstream</option>
+            <option value="high">High</option>
+            <option value="ultra">Ultra</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          CPU tier
+          <select className="mt-1 block w-full rounded border px-2 py-1" value={input.cpuTier}
+            onChange={(e) => set("cpuTier", e.target.value as HardwareInput["cpuTier"])}>
+            <option value="low">Low</option>
+            <option value="mid">Mid</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          Resolution
+          <select className="mt-1 block w-full rounded border px-2 py-1" value={input.resolution}
+            onChange={(e) => set("resolution", e.target.value as HardwareInput["resolution"])}>
+            <option value="1080p">1080p</option>
+            <option value="1440p">1440p</option>
+            <option value="4k">4K</option>
+          </select>
+        </label>
+      </div>
+      <p className={`mt-4 text-xl font-bold ${result.passes ? "text-green-700" : "text-red-700"}`}>
+        {result.passes ? "Likely can run GTA 6 ✓" : "May struggle ✗"}
+      </p>
+      <p className="mt-2 text-sm text-neutral-600">{result.reason}</p>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 7: Write the two tool pages**
+
+`app/tools/fps-estimator/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { FpsEstimator } from "@/components/FpsEstimator";
+
+export const metadata: Metadata = {
+  title: "GTA 6 FPS Estimator — Projected Performance by Hardware",
+  description: "Estimate projected GTA 6 FPS for your GPU, CPU, and resolution. Pre-launch projections.",
+  alternates: { canonical: "/tools/fps-estimator" },
+};
+
+export default function FpsEstimatorPage() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 FPS Estimator</h1>
+      <p className="mt-2 text-neutral-700">
+        Pick your hardware to see a projected GTA 6 frame rate. These are pre-launch estimates.
+      </p>
+      <div className="mt-6">
+        <FpsEstimator />
+      </div>
+    </main>
+  );
+}
+```
+
+`app/tools/can-i-run-gta-6/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { RequirementChecker } from "@/components/RequirementChecker";
+
+export const metadata: Metadata = {
+  title: "Can I Run GTA 6? — PC Requirement Checker",
+  description: "Check whether your PC can likely run GTA 6 based on projected system requirements.",
+  alternates: { canonical: "/tools/can-i-run-gta-6" },
+};
+
+export default function CanIRunPage() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">Can I Run GTA 6?</h1>
+      <p className="mt-2 text-neutral-700">
+        Select your hardware for a projected pass/fail against expected GTA 6 requirements.
+      </p>
+      <div className="mt-6">
+        <RequirementChecker />
+      </div>
+    </main>
+  );
+}
+```
+
+- [ ] **Step 8: Add the tool routes to `app/sitemap.ts`**
+
+Add `"/tools/fps-estimator"` and `"/tools/can-i-run-gta-6"` to the `STATIC_PATHS` array.
+
+- [ ] **Step 9: Run the full suite and build**
+
+Run: `npm test && npm run build`
+Expected: all tests pass; build succeeds; both tool routes static; sitemap includes them.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add lib/fps.ts lib/fps.test.ts components/FpsEstimator.tsx components/RequirementChecker.tsx app/tools app/sitemap.ts
+git commit -m "feat: add FPS estimator and PC requirement checker tools"
+```
+
+---
+
 ## Final Verification
 
-After all tasks (v1 + v2):
+After all tasks (v1 + v2 + v3):
 
-- [ ] Run `npm test` — every test file passes (site.config, posts, affiliates, countdown, subscribe, seo, filter, draft, writeDraft, validate-content, taxonomy, download-pages).
-- [ ] Run `npm run build` — `prebuild` validation passes; all routes build; static pages are static; `/news/[slug]` and `/[downloadSlug]` enumerated via `generateStaticParams`.
+- [ ] Run `npm test` — every test file passes (site.config, posts, affiliates, countdown, subscribe, seo, filter, draft, writeDraft, validate-content, taxonomy, download-pages, pseo, fps).
+- [ ] Run `npm run build` — `prebuild` validation passes; all routes build; static pages are static; `/news/[slug]`, `/[downloadSlug]`, and `/[family]/[item]` enumerated via `generateStaticParams`.
+- [ ] **PSEO index gate** — confirm a programmatic page is `noindex` + absent from the sitemap until a published body slug `<family>-<item>` exists in `content/posts/`. Publish one `gpu-rtx-4060` post and confirm `/gpu/rtx-4060` becomes indexable and appears in the sitemap.
+- [ ] **Tools are projections** — `/tools/fps-estimator` and `/tools/can-i-run-gta-6` clearly label output as pre-launch estimates (enforced by the `note.toLowerCase()` test in Task 23).
 - [ ] Grep guard — the pipeline never writes to `content/posts/`: `grep -rn "content/posts" scripts/` shows only `validate-content.ts` (read). Both `ingest.ts` passes (RSS + topic) write only to `content/drafts/`.
 - [ ] Grep guard — every affiliate link uses `sponsored nofollow`: `components/AffiliateLink.tsx` contains `rel="sponsored nofollow"`.
 - [ ] **Honest-framing guard** — confirm every `intent: "no_product"` page in `lib/download-pages.ts` has a non-empty `warning` (enforced by the test in Task 16) and renders the scam warning. No page implies a download exists for mobile/android/ios/apk.

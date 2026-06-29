@@ -49,6 +49,20 @@ fastest-updated GTA 6 status/news source — not by spamming.
 YouTube Shorts · TikTok · Instagram Reels · Facebook · X · Telegram · Discord. Repurpose news +
 countdown + status updates. The site's `/feed.xml` feeds automation tools.
 
+## Deferred tools & pages (post-launch — need real GTA 6 data)
+
+Build only once the game ships and real data exists; building now = empty shells.
+
+- **Money calculator, vehicle price calculator** — need real in-game economy/vehicle data.
+- **Graphics settings optimizer** — improves a lot once real benchmark data exists.
+- **Interactive map** — needs map tiles/POI data.
+- **Mission tracker, achievement/trophy tracker** — need real mission/achievement lists.
+- **Character builder, save-game tracker** — need real game systems.
+- **Programmatic page families at full scale** (every GPU/CPU/handheld/launcher/error code) —
+  the generator is built (v3), but most pages stay `noindex` until real post-launch benchmark
+  data lets each carry differentiated content. Fill the `data/*.json` files + review bodies
+  over time; index per-page as each becomes real.
+
 ## Pre-launch checklist (do once, before promoting)
 
 - [ ] Legal pages live (about/contact/privacy/disclaimer) — required for AdSense.

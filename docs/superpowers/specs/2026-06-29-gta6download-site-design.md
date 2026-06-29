@@ -100,6 +100,37 @@ when it has genuine, differentiated content — no empty templated doorway pages
 volume-permissive but quality-gated: pages exist because they say something real, not because a
 template exists.
 
+### Programmatic SEO at scale (v3 — data-gated generator)
+Goal: a generator that can produce thousands of pages across families (every GPU, CPU, handheld,
+Windows version, launcher, error code, graphics setting) — but **gated on real data**, not mass
+template output.
+
+**Hard rules (LOCKED):**
+- A programmatic page renders **only when both** a structured data row exists for it **and** an
+  AI-drafted, human-reviewed body exists for it. A data row without a reviewed body, or a body
+  without data, does not publish.
+- Pages with no differentiated content are **`noindex`** (and excluded from the sitemap) until both
+  halves exist. This prevents thin shells from ever being indexed.
+- This is the survivable form of "10,000 pages": the *generator* scales to thousands; *published &
+  indexed* pages grow only as real data (mostly post-launch benchmarks) and reviews accumulate.
+  Mass-publishing template-only pages is explicitly rejected — it is the doorway-page pattern Google's
+  scaled-content-abuse policy deindexes, fatal on a new `.store` domain.
+
+Data lives in a structured file per family (`data/gpus.json`, `data/cpus.json`, `data/errors.json`,
+etc.). The generator joins each data row with its reviewed MDX body; missing either → page is
+`noindex` placeholder or simply not emitted.
+
+### Interactive tools (v3 — buildable now)
+- **FPS estimator** (`/tools/fps-estimator`): user picks GPU + CPU + resolution → projected FPS from
+  a spec table. Projections are clearly labeled as estimates (no real benchmarks pre-launch).
+- **PC requirement checker** (`/tools/can-i-run-gta-6`): user inputs/selects their hardware → pass/fail
+  vs. the (projected) requirements. Backlink magnet.
+
+Pure computation lives in tested `lib/` functions; pages are thin client wrappers. Deferred tools
+(money/vehicle calculators, graphics optimizer, interactive map, mission/achievement trackers,
+character builder) are **post-launch** — they need real GTA 6 game data that does not exist yet —
+and are tracked in `docs/growth-playbook.md`, not built now.
+
 ### Expanded JSON-LD schema set
 Add to the v1 set (Article/FAQ/Breadcrumb/Organization): **HowTo** (installation/error guides),
 **VideoObject** (video embeds), **SoftwareApplication** (download/requirements pages),
