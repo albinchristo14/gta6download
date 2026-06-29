@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a statically-generated Next.js + MDX SEO hub for GTA 6 download-related search terms, with an AI-assisted RSS news pipeline (drafts only), an honest Download Status hub, and affiliate + display-ad monetization.
+**Goal:** Build a statically-generated Next.js + MDX SEO hub for GTA 6 download-related search terms, with an AI-assisted RSS news pipeline (drafts only), an honest Download Status hub, affiliate + display-ad monetization, content silos, a download-page family (honest framing for no-product terms), expanded JSON-LD schema, and a topic-queue mode for programmatic page drafting. Tasks 1–13 are v1; Tasks 14–19 are the v2 expansion.
 
 **Architecture:** A Next.js App Router site renders MDX content files at build time (static = fast = good Core Web Vitals). A separate Node script (`scripts/ingest.ts`) fetches gaming RSS feeds, filters for genuine GTA 6 items, drafts original rewrites via the Claude API, and writes **drafts only** into `content/drafts/`. Nothing publishes without a human moving a draft to `content/posts/` and committing. Monetization (affiliate links, ad slots, email capture) is centralized in config files so a single edit updates every page.
 
@@ -2477,14 +2477,1138 @@ git commit -m "feat: add build-time content validation guard and README"
 
 ---
 
+## v2 — Silos, Download Pages, Programmatic Content, Expanded Schema
+
+These tasks extend v1 (Tasks 1–13). They depend on the v1 content loader, SEO helpers, components,
+and pipeline. **Honest-framing constraint (from the spec, LOCKED):** download-silo pages for terms
+with no real product (mobile/android/ios/apk) state the truth and convert to official links — they
+do not imply a download exists, and the site never hosts/links files.
+
+### Task 14: Taxonomy — categories + related-content data
+
+**Files:**
+- Create: `lib/taxonomy.ts`
+- Modify: `lib/posts.ts` (add optional `category` to frontmatter schema)
+- Test: `lib/taxonomy.test.ts`
+- Modify: `lib/posts.test.ts` (add a `category` round-trip assertion)
+
+**Interfaces:**
+- Consumes: `getAllPosts`, `PostFrontmatter` (Task 3).
+- Produces:
+  - `export type Category = "downloads" | "installation" | "requirements" | "errors" | "news" | "guides" | "comparisons"`
+  - `export const categories: Array<{ id: Category; label: string; path: string }>`
+  - `export function postsByCategory(category: Category): Post[]` (where `Post` is the `getAllPosts` element type).
+  - `export function relatedPosts(slug: string, limit?: number): Post[]` — same-category first, then shared tags.
+  - Frontmatter schema gains `category: Category` (optional; defaults to `"news"`).
+
+- [ ] **Step 1: Add `category` to the frontmatter schema in `lib/posts.ts`**
+
+In the `frontmatterSchema` object (Task 3), add this field (before `tags`):
+```ts
+    category: z
+      .enum(["downloads", "installation", "requirements", "errors", "news", "guides", "comparisons"])
+      .default("news"),
+```
+
+- [ ] **Step 2: Add a category assertion to `lib/posts.test.ts`**
+
+Append to the `parsePost` describe block:
+```ts
+  it("defaults category to news when omitted", () => {
+    const { frontmatter } = parsePost(VALID);
+    expect(frontmatter.category).toBe("news");
+  });
+```
+
+- [ ] **Step 3: Run to confirm posts tests still pass**
+
+Run: `npm test -- lib/posts.test.ts`
+Expected: PASS (6 tests).
+
+- [ ] **Step 4: Write the failing taxonomy test**
+
+`lib/taxonomy.test.ts`:
+```ts
+import { describe, it, expect } from "vitest";
+import { categories } from "./taxonomy";
+
+describe("categories", () => {
+  it("exposes all seven silos with unique paths", () => {
+    expect(categories).toHaveLength(7);
+    const paths = categories.map((c) => c.path);
+    expect(new Set(paths).size).toBe(paths.length);
+    expect(categories.find((c) => c.id === "downloads")?.path).toBe("/downloads");
+  });
+});
+```
+
+- [ ] **Step 5: Run to verify it fails**
+
+Run: `npm test -- lib/taxonomy.test.ts`
+Expected: FAIL — cannot resolve `./taxonomy`.
+
+- [ ] **Step 6: Write `lib/taxonomy.ts`**
+
+```ts
+import { getAllPosts } from "@/lib/posts";
+
+export type Category =
+  | "downloads"
+  | "installation"
+  | "requirements"
+  | "errors"
+  | "news"
+  | "guides"
+  | "comparisons";
+
+export const categories: Array<{ id: Category; label: string; path: string }> = [
+  { id: "downloads", label: "Downloads", path: "/downloads" },
+  { id: "installation", label: "Installation", path: "/installation" },
+  { id: "requirements", label: "Requirements", path: "/requirements" },
+  { id: "errors", label: "Errors", path: "/errors" },
+  { id: "news", label: "News", path: "/news" },
+  { id: "guides", label: "Guides", path: "/guides" },
+  { id: "comparisons", label: "Comparisons", path: "/comparisons" },
+];
+
+type Post = ReturnType<typeof getAllPosts>[number];
+
+export function postsByCategory(category: Category): Post[] {
+  return getAllPosts().filter((p) => p.frontmatter.category === category);
+}
+
+export function relatedPosts(slug: string, limit = 6): Post[] {
+  const all = getAllPosts();
+  const current = all.find((p) => p.slug === slug);
+  if (!current) return all.slice(0, limit);
+  const sameCat = all.filter(
+    (p) => p.slug !== slug && p.frontmatter.category === current.frontmatter.category
+  );
+  const sharedTag = all.filter(
+    (p) =>
+      p.slug !== slug &&
+      p.frontmatter.category !== current.frontmatter.category &&
+      p.frontmatter.tags.some((t) => current.frontmatter.tags.includes(t))
+  );
+  return [...sameCat, ...sharedTag].slice(0, limit);
+}
+```
+
+- [ ] **Step 7: Run to verify it passes**
+
+Run: `npm test -- lib/taxonomy.test.ts lib/posts.test.ts`
+Expected: PASS (taxonomy 1 + posts 6).
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add lib/taxonomy.ts lib/taxonomy.test.ts lib/posts.ts lib/posts.test.ts
+git commit -m "feat: add content taxonomy (categories + related posts)"
+```
+
+---
+
+### Task 15: RelatedContent component + wire into article pages
+
+**Files:**
+- Create: `components/RelatedContent.tsx`
+- Modify: `app/news/[slug]/page.tsx` (render `<RelatedContent slug={...} />`)
+
+**Interfaces:**
+- Consumes: `relatedPosts`, `categories` (Task 14).
+- Produces: `<RelatedContent slug={string} />` — renders a "Related" block grouped by silo, linking to related articles + each silo index. Empty-safe (renders nothing useful-looking if no related posts).
+
+- [ ] **Step 1: Write `components/RelatedContent.tsx`**
+
+```tsx
+import Link from "next/link";
+import { relatedPosts, categories } from "@/lib/taxonomy";
+
+export function RelatedContent({ slug }: { slug: string }) {
+  const related = relatedPosts(slug);
+  return (
+    <aside className="mt-10 border-t border-neutral-200 pt-6">
+      <h2 className="text-lg font-semibold">Related</h2>
+      {related.length > 0 && (
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {related.map((p) => (
+            <li key={p.slug}>
+              <Link href={`/news/${p.slug}`} className="text-sm hover:underline">
+                {p.frontmatter.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      <nav className="mt-4 flex flex-wrap gap-3 text-sm text-neutral-600">
+        {categories.map((c) => (
+          <Link key={c.id} href={c.path} className="hover:underline">
+            {c.label}
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+```
+
+- [ ] **Step 2: Wire it into the article page**
+
+In `app/news/[slug]/page.tsx`, add the import:
+```tsx
+import { RelatedContent } from "@/components/RelatedContent";
+```
+And add `<RelatedContent slug={frontmatter.slug} />` immediately after the closing `</section>` of the Sources block, before `</article>`.
+
+- [ ] **Step 3: Run the build**
+
+Run: `npm run build`
+Expected: build succeeds; article pages render the related block.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add components/RelatedContent.tsx app/news/[slug]/page.tsx
+git commit -m "feat: add related-content block to articles"
+```
+
+---
+
+### Task 16: Download silo pages (data-driven, honest framing)
+
+**Files:**
+- Create: `lib/download-pages.ts`
+- Create: `app/[downloadSlug]/page.tsx` (catch-all-style dynamic route restricted to known slugs)
+- Test: `lib/download-pages.test.ts`
+
+**Interfaces:**
+- Consumes: `affiliateStores` + `getStore` (Task 4), `AffiliateLink`, `AffiliateDisclosure`, `EmailSignup`, `Countdown`, `siteConfig`, `breadcrumbJsonLd`.
+- Produces:
+  - `export interface DownloadPage { slug: string; h1: string; title: string; description: string; intent: "real" | "no_product"; storeIds: string[]; intro: string; warning?: string }`
+  - `export const downloadPages: DownloadPage[]`
+  - `export function getDownloadPage(slug: string): DownloadPage | undefined`
+  - A dynamic route at `/gta-6-download-<x>` that renders each page. `intent: "no_product"` pages render the honest "no official version exists / beware scams" framing + official links; `intent: "real"` pages render normal store CTAs.
+
+- [ ] **Step 1: Write the failing test**
+
+`lib/download-pages.test.ts`:
+```ts
+import { describe, it, expect } from "vitest";
+import { downloadPages, getDownloadPage } from "./download-pages";
+import { getStore } from "@/affiliates.config";
+
+describe("downloadPages", () => {
+  it("every page has a unique slug starting with gta-6-download", () => {
+    const slugs = downloadPages.map((p) => p.slug);
+    expect(new Set(slugs).size).toBe(slugs.length);
+    for (const p of downloadPages) {
+      expect(p.slug.startsWith("gta-6-download")).toBe(true);
+    }
+  });
+
+  it("every referenced storeId resolves to a real store", () => {
+    for (const p of downloadPages) {
+      for (const id of p.storeIds) {
+        expect(getStore(id), `store ${id} on ${p.slug}`).toBeDefined();
+      }
+    }
+  });
+
+  it("no_product pages carry a scam warning", () => {
+    const noProduct = downloadPages.filter((p) => p.intent === "no_product");
+    expect(noProduct.length).toBeGreaterThan(0);
+    for (const p of noProduct) {
+      expect(p.warning, `${p.slug} must warn`).toBeTruthy();
+    }
+  });
+
+  it("getDownloadPage resolves known and rejects unknown", () => {
+    expect(getDownloadPage(downloadPages[0].slug)?.slug).toBe(downloadPages[0].slug);
+    expect(getDownloadPage("nope")).toBeUndefined();
+  });
+});
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `npm test -- lib/download-pages.test.ts`
+Expected: FAIL — cannot resolve `./download-pages`.
+
+- [ ] **Step 3: Write `lib/download-pages.ts`**
+
+```ts
+export interface DownloadPage {
+  slug: string;
+  h1: string;
+  title: string;
+  description: string;
+  /** "real" = a legitimate store path exists; "no_product" = no official version, honest framing. */
+  intent: "real" | "no_product";
+  storeIds: string[];
+  intro: string;
+  warning?: string;
+}
+
+const REAL_INTRO =
+  "GTA 6 isn’t downloadable yet — it’s in the pre-order phase. The only safe way to get it is through an official store. Use the links below; we only point to official storefronts.";
+
+const NO_PRODUCT_WARNING =
+  "Important: there is no official GTA 6 version for this platform. Any site offering one is a scam or malware. Below are the official platforms GTA 6 is actually confirmed for.";
+
+export const downloadPages: DownloadPage[] = [
+  {
+    slug: "gta-6-download-pc",
+    h1: "GTA 6 Download for PC",
+    title: "GTA 6 Download for PC — Official Stores & Status",
+    description: "How to get GTA 6 on PC: official Rockstar, Steam, and Epic links, plus current status.",
+    intent: "real",
+    storeIds: ["rockstar", "steam", "epic"],
+    intro: REAL_INTRO,
+  },
+  {
+    slug: "gta-6-download-steam",
+    h1: "GTA 6 on Steam",
+    title: "GTA 6 Download on Steam — Status & Official Link",
+    description: "Is GTA 6 on Steam? Current status and the official Steam store link.",
+    intent: "real",
+    storeIds: ["steam"],
+    intro: REAL_INTRO,
+  },
+  {
+    slug: "gta-6-download-epic-games",
+    h1: "GTA 6 on Epic Games Store",
+    title: "GTA 6 Download on Epic Games Store — Status & Link",
+    description: "Is GTA 6 on the Epic Games Store? Current status and official link.",
+    intent: "real",
+    storeIds: ["epic"],
+    intro: REAL_INTRO,
+  },
+  {
+    slug: "gta-6-download-rockstar-games",
+    h1: "GTA 6 on the Rockstar Store",
+    title: "GTA 6 Download — Rockstar Store Status & Link",
+    description: "Get GTA 6 from the official Rockstar Store. Current status and link.",
+    intent: "real",
+    storeIds: ["rockstar"],
+    intro: REAL_INTRO,
+  },
+  {
+    slug: "gta-6-download-ps5",
+    h1: "GTA 6 for PlayStation 5",
+    title: "GTA 6 Download for PS5 — Status & Official Link",
+    description: "GTA 6 on PlayStation 5: current status and the official PS Store link.",
+    intent: "real",
+    storeIds: ["playstation"],
+    intro: REAL_INTRO,
+  },
+  {
+    slug: "gta-6-download-xbox",
+    h1: "GTA 6 for Xbox Series X|S",
+    title: "GTA 6 Download for Xbox — Status & Official Link",
+    description: "GTA 6 on Xbox Series X|S: current status and the official Xbox store link.",
+    intent: "real",
+    storeIds: ["xbox"],
+    intro: REAL_INTRO,
+  },
+  {
+    slug: "gta-6-download-mobile",
+    h1: "GTA 6 Mobile — Is There a Download?",
+    title: "GTA 6 Mobile Download — The Truth (No Official Version)",
+    description: "Is there a GTA 6 mobile download? No official mobile version exists. Avoid the scams.",
+    intent: "no_product",
+    storeIds: ["playstation", "xbox", "rockstar"],
+    intro:
+      "Searching for a GTA 6 mobile download? Here’s the honest answer and how to actually get the game when it launches.",
+    warning: NO_PRODUCT_WARNING,
+  },
+  {
+    slug: "gta-6-download-android",
+    h1: "GTA 6 for Android — Is There an APK?",
+    title: "GTA 6 Android Download — No Official APK Exists",
+    description: "Is there a GTA 6 Android APK? No. Avoid fake APKs and malware. Here’s the real story.",
+    intent: "no_product",
+    storeIds: ["playstation", "xbox", "rockstar"],
+    intro:
+      "There is no official GTA 6 for Android. Any APK claiming to be GTA 6 is fake. Here’s how to get the real game.",
+    warning: NO_PRODUCT_WARNING,
+  },
+  {
+    slug: "gta-6-download-ios",
+    h1: "GTA 6 for iPhone/iOS — Is It Available?",
+    title: "GTA 6 iOS Download — No Official iPhone Version",
+    description: "Is GTA 6 on iPhone/iOS? No official version exists. Avoid scam apps.",
+    intent: "no_product",
+    storeIds: ["playstation", "xbox", "rockstar"],
+    intro:
+      "There is no official GTA 6 for iPhone or iPad. Any App Store or sideload claiming otherwise is not legitimate.",
+    warning: NO_PRODUCT_WARNING,
+  },
+  {
+    slug: "gta-6-download-apk",
+    h1: "GTA 6 APK — Real or Fake?",
+    title: "GTA 6 APK Download — Why Every One Is Fake",
+    description: "Looking for a GTA 6 APK? There is no official APK. Every one is a scam or malware.",
+    intent: "no_product",
+    storeIds: ["playstation", "xbox", "rockstar"],
+    intro:
+      "There is no official GTA 6 APK and there never has been. Sites offering one are distributing scams or malware.",
+    warning: NO_PRODUCT_WARNING,
+  },
+];
+
+export function getDownloadPage(slug: string): DownloadPage | undefined {
+  return downloadPages.find((p) => p.slug === slug);
+}
+```
+
+- [ ] **Step 4: Run to verify it passes**
+
+Run: `npm test -- lib/download-pages.test.ts`
+Expected: PASS (4 tests).
+
+- [ ] **Step 5: Write the dynamic route `app/[downloadSlug]/page.tsx`**
+
+```tsx
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { downloadPages, getDownloadPage } from "@/lib/download-pages";
+import { getStore } from "@/affiliates.config";
+import { AffiliateLink } from "@/components/AffiliateLink";
+import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
+import { EmailSignup } from "@/components/EmailSignup";
+import { Countdown } from "@/components/Countdown";
+import { siteConfig } from "@/site.config";
+import { breadcrumbJsonLd } from "@/lib/seo";
+
+export function generateStaticParams() {
+  return downloadPages.map((p) => ({ downloadSlug: p.slug }));
+}
+
+export function generateMetadata({ params }: { params: { downloadSlug: string } }): Metadata {
+  const page = getDownloadPage(params.downloadSlug);
+  if (!page) return {};
+  return {
+    title: page.title,
+    description: page.description,
+    alternates: { canonical: `/${page.slug}` },
+  };
+}
+
+export default function DownloadSiloPage({ params }: { params: { downloadSlug: string } }) {
+  const page = getDownloadPage(params.downloadSlug);
+  if (!page) notFound();
+
+  const stores = page.storeIds.map((id) => getStore(id)).filter((s): s is NonNullable<typeof s> => !!s);
+
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", url: siteConfig.url },
+              { name: page.h1, url: `${siteConfig.url}/${page.slug}` },
+            ])
+          ),
+        }}
+      />
+      <h1 className="text-3xl font-bold">{page.h1}</h1>
+      <p className="mt-3 text-neutral-700">{page.intro}</p>
+
+      {page.warning && (
+        <div className="my-5 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          {page.warning}
+        </div>
+      )}
+
+      <section className="my-6">
+        <h2 className="mb-1 text-xl font-semibold">Release countdown</h2>
+        <Countdown target={siteConfig.releaseDate} />
+      </section>
+
+      <section className="my-6">
+        <h2 className="mb-3 text-xl font-semibold">
+          {page.intent === "no_product" ? "Official platforms GTA 6 is confirmed for" : "Get it from an official store"}
+        </h2>
+        <AffiliateDisclosure />
+        <div className="flex flex-wrap gap-3">
+          {stores.map((store) => (
+            <AffiliateLink key={store.id} store={store}>
+              {store.name} ({store.platform})
+            </AffiliateLink>
+          ))}
+        </div>
+      </section>
+
+      <section className="my-8 rounded-lg border border-neutral-200 p-4">
+        <h2 className="mb-2 text-xl font-semibold">Get notified at launch</h2>
+        <EmailSignup />
+      </section>
+    </main>
+  );
+}
+```
+
+> Note: this dynamic route only matches slugs returned by `generateStaticParams`; any other
+> top-level path that isn't a real route falls through to `not-found`. Because all v1 routes
+> (`/news`, `/faq`, etc.) are explicit segments, Next.js matches those first; the `[downloadSlug]`
+> route only catches the `gta-6-download-*` slugs we generate. If a future top-level static page
+> collides, give this route a parent segment instead.
+
+- [ ] **Step 6: Run the build**
+
+Run: `npm run build`
+Expected: build succeeds; all `gta-6-download-*` pages listed as static (SSG).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add lib/download-pages.ts lib/download-pages.test.ts "app/[downloadSlug]/page.tsx"
+git commit -m "feat: add download silo pages with honest framing for no-product terms"
+```
+
+---
+
+### Task 17: Silo index pages + sitemap/nav integration
+
+**Files:**
+- Create: `app/downloads/page.tsx`, `app/installation/page.tsx`, `app/requirements/page.tsx`, `app/errors/page.tsx`, `app/guides/page.tsx`, `app/comparisons/page.tsx`
+- Create: `components/SiloIndex.tsx`
+- Modify: `app/sitemap.ts` (add silo paths + download-silo slugs)
+
+**Interfaces:**
+- Consumes: `postsByCategory`, `categories` (Task 14), `downloadPages` (Task 16).
+- Produces: an index page per silo listing its posts; `<SiloIndex category={Category} downloadLinks?={boolean} />` reusable list; sitemap includes every new URL.
+
+- [ ] **Step 1: Write `components/SiloIndex.tsx`**
+
+```tsx
+import Link from "next/link";
+import { postsByCategory, type Category } from "@/lib/taxonomy";
+import { downloadPages } from "@/lib/download-pages";
+
+export function SiloIndex({
+  category,
+  showDownloadLinks = false,
+}: {
+  category: Category;
+  showDownloadLinks?: boolean;
+}) {
+  const posts = postsByCategory(category);
+  return (
+    <div>
+      {showDownloadLinks && (
+        <ul className="mb-6 grid gap-2 sm:grid-cols-2">
+          {downloadPages.map((d) => (
+            <li key={d.slug}>
+              <Link href={`/${d.slug}`} className="hover:underline">
+                {d.h1}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {posts.length === 0 ? (
+        <p className="text-neutral-500">No articles in this section yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {posts.map((p) => (
+            <li key={p.slug}>
+              <Link href={`/news/${p.slug}`} className="font-medium hover:underline">
+                {p.frontmatter.title}
+              </Link>
+              <p className="text-sm text-neutral-500">{p.frontmatter.description}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Write the six silo index pages**
+
+Each follows the same shape. `app/downloads/page.tsx` (the one with `showDownloadLinks`):
+```tsx
+import type { Metadata } from "next";
+import { SiloIndex } from "@/components/SiloIndex";
+
+export const metadata: Metadata = {
+  title: "GTA 6 Downloads — All Platforms",
+  description: "GTA 6 download pages and status for PC, PS5, Xbox, and more — official links only.",
+  alternates: { canonical: "/downloads" },
+};
+
+export default function DownloadsSilo() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 Downloads</h1>
+      <p className="mt-2 text-neutral-700">Official download status and links by platform.</p>
+      <div className="mt-6">
+        <SiloIndex category="downloads" showDownloadLinks />
+      </div>
+    </main>
+  );
+}
+```
+
+`app/installation/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { SiloIndex } from "@/components/SiloIndex";
+
+export const metadata: Metadata = {
+  title: "GTA 6 Installation Guides & Fixes",
+  description: "How to install GTA 6 and fix common installation errors.",
+  alternates: { canonical: "/installation" },
+};
+
+export default function InstallationSilo() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 Installation</h1>
+      <div className="mt-6">
+        <SiloIndex category="installation" />
+      </div>
+    </main>
+  );
+}
+```
+
+`app/requirements/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { SiloIndex } from "@/components/SiloIndex";
+
+export const metadata: Metadata = {
+  title: "GTA 6 System Requirements & Benchmarks",
+  description: "GTA 6 PC requirements, GPU/CPU benchmarks, and settings guides.",
+  alternates: { canonical: "/requirements" },
+};
+
+export default function RequirementsSilo() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 Requirements</h1>
+      <div className="mt-6">
+        <SiloIndex category="requirements" />
+      </div>
+    </main>
+  );
+}
+```
+
+`app/errors/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { SiloIndex } from "@/components/SiloIndex";
+
+export const metadata: Metadata = {
+  title: "GTA 6 Error Codes & Fixes",
+  description: "Fixes for GTA 6 errors: launcher issues, crashes, black screens, and error codes.",
+  alternates: { canonical: "/errors" },
+};
+
+export default function ErrorsSilo() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 Errors &amp; Fixes</h1>
+      <div className="mt-6">
+        <SiloIndex category="errors" />
+      </div>
+    </main>
+  );
+}
+```
+
+`app/guides/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { SiloIndex } from "@/components/SiloIndex";
+
+export const metadata: Metadata = {
+  title: "GTA 6 Guides",
+  description: "GTA 6 guides: settings, controllers, FPS, and more.",
+  alternates: { canonical: "/guides" },
+};
+
+export default function GuidesSilo() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 Guides</h1>
+      <div className="mt-6">
+        <SiloIndex category="guides" />
+      </div>
+    </main>
+  );
+}
+```
+
+`app/comparisons/page.tsx`:
+```tsx
+import type { Metadata } from "next";
+import { SiloIndex } from "@/components/SiloIndex";
+
+export const metadata: Metadata = {
+  title: "GTA 6 Comparisons",
+  description: "GTA 6 vs other games: GTA 5, Cyberpunk 2077, RDR2, and more.",
+  alternates: { canonical: "/comparisons" },
+};
+
+export default function ComparisonsSilo() {
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <h1 className="text-3xl font-bold">GTA 6 Comparisons</h1>
+      <div className="mt-6">
+        <SiloIndex category="comparisons" />
+      </div>
+    </main>
+  );
+}
+```
+
+- [ ] **Step 3: Add silo + download paths to `app/sitemap.ts`**
+
+Replace the `STATIC_PATHS` array in `app/sitemap.ts` with:
+```ts
+const STATIC_PATHS = [
+  "",
+  "/gta-6-download",
+  "/news",
+  "/where-to-buy",
+  "/gta-6-release-date",
+  "/gta-6-system-requirements",
+  "/faq",
+  "/about",
+  "/contact",
+  "/privacy",
+  "/disclaimer",
+  "/downloads",
+  "/installation",
+  "/requirements",
+  "/errors",
+  "/guides",
+  "/comparisons",
+];
+```
+And add the download-silo entries. Add this import at the top:
+```ts
+import { downloadPages } from "@/lib/download-pages";
+```
+And in the `sitemap()` function, before the `return`, add:
+```ts
+  const downloadEntries = downloadPages.map((d) => ({
+    url: `${siteConfig.url}/${d.slug}`,
+    lastModified: new Date(),
+  }));
+```
+Then change the return to include them:
+```ts
+  return [...staticEntries, ...downloadEntries, ...postEntries];
+```
+
+- [ ] **Step 4: Run the build**
+
+Run: `npm run build`
+Expected: build succeeds; six silo index routes + all download slugs present; sitemap includes them.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/downloads app/installation app/requirements app/errors app/guides app/comparisons components/SiloIndex.tsx app/sitemap.ts
+git commit -m "feat: add silo index pages and sitemap integration"
+```
+
+---
+
+### Task 18: Expanded JSON-LD schema (HowTo, VideoObject, SoftwareApplication, WebSite+SearchAction)
+
+**Files:**
+- Modify: `lib/seo.ts` (add four helpers)
+- Modify: `lib/seo.test.ts` (add assertions)
+- Modify: `app/layout.tsx` (emit WebSite+SearchAction)
+- Modify: `app/[downloadSlug]/page.tsx` (emit SoftwareApplication on `real` pages)
+
+**Interfaces:**
+- Consumes: `siteConfig`.
+- Produces:
+  - `export function howToJsonLd(name: string, steps: Array<{ name: string; text: string }>): object`
+  - `export function videoJsonLd(v: { name: string; description: string; thumbnailUrl: string; uploadDate: string; contentUrl: string }): object`
+  - `export function softwareAppJsonLd(opts: { name: string; os: string; category?: string }): object`
+  - `export function websiteSearchJsonLd(): object` — `WebSite` with `SearchAction`.
+
+- [ ] **Step 1: Add the four helpers to `lib/seo.ts`**
+
+Append to `lib/seo.ts`:
+```ts
+export function howToJsonLd(name: string, steps: Array<{ name: string; text: string }>): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name,
+    step: steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.name,
+      text: s.text,
+    })),
+  };
+}
+
+export function videoJsonLd(v: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  contentUrl: string;
+}): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: v.name,
+    description: v.description,
+    thumbnailUrl: v.thumbnailUrl,
+    uploadDate: v.uploadDate,
+    contentUrl: v.contentUrl,
+  };
+}
+
+export function softwareAppJsonLd(opts: { name: string; os: string; category?: string }): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: opts.name,
+    operatingSystem: opts.os,
+    applicationCategory: opts.category ?? "GameApplication",
+  };
+}
+
+export function websiteSearchJsonLd(): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${siteConfig.url}/news?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+```
+
+- [ ] **Step 2: Add tests to `lib/seo.test.ts`**
+
+Append a new describe block:
+```ts
+import { howToJsonLd, videoJsonLd, softwareAppJsonLd, websiteSearchJsonLd } from "./seo";
+
+describe("expanded JSON-LD", () => {
+  it("howTo lists ordered steps", () => {
+    const ld = howToJsonLd("Install", [
+      { name: "A", text: "do a" },
+      { name: "B", text: "do b" },
+    ]) as any;
+    expect(ld["@type"]).toBe("HowTo");
+    expect(ld.step[1].position).toBe(2);
+  });
+
+  it("video has VideoObject type and contentUrl", () => {
+    const ld = videoJsonLd({
+      name: "n", description: "d", thumbnailUrl: "https://x/t.jpg",
+      uploadDate: "2026-01-01", contentUrl: "https://x/v.mp4",
+    }) as any;
+    expect(ld["@type"]).toBe("VideoObject");
+    expect(ld.contentUrl).toBe("https://x/v.mp4");
+  });
+
+  it("software app defaults to GameApplication category", () => {
+    const ld = softwareAppJsonLd({ name: "GTA 6", os: "Windows" }) as any;
+    expect(ld.applicationCategory).toBe("GameApplication");
+  });
+
+  it("website search action targets the news search", () => {
+    const ld = websiteSearchJsonLd() as any;
+    expect(ld["@type"]).toBe("WebSite");
+    expect(ld.potentialAction["@type"]).toBe("SearchAction");
+  });
+});
+```
+
+> Note: the existing `import { ... } from "./seo"` at the top of the test file can be extended
+> instead of adding a second import line — either is fine; duplicate named imports from the same
+> module are a lint warning, not an error. Prefer merging into the top import.
+
+- [ ] **Step 3: Run the seo tests**
+
+Run: `npm test -- lib/seo.test.ts`
+Expected: PASS (4 original + 4 new = 8).
+
+- [ ] **Step 4: Emit WebSite+SearchAction in `app/layout.tsx`**
+
+Add the import:
+```tsx
+import { organizationJsonLd, websiteSearchJsonLd } from "@/lib/seo";
+```
+And add a second JSON-LD script in `<body>` right after the organization one:
+```tsx
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSearchJsonLd()) }}
+        />
+```
+
+- [ ] **Step 5: Emit SoftwareApplication on `real` download pages**
+
+In `app/[downloadSlug]/page.tsx`, add the import:
+```tsx
+import { breadcrumbJsonLd, softwareAppJsonLd } from "@/lib/seo";
+```
+(merge with the existing `breadcrumbJsonLd` import). After the breadcrumb `<script>`, add:
+```tsx
+      {page.intent === "real" && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              softwareAppJsonLd({ name: "Grand Theft Auto VI", os: page.h1.includes("PC") ? "Windows" : "Console" })
+            ),
+          }}
+        />
+      )}
+```
+
+- [ ] **Step 6: Run the build**
+
+Run: `npm test && npm run build`
+Expected: all tests pass; build succeeds.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add lib/seo.ts lib/seo.test.ts app/layout.tsx "app/[downloadSlug]/page.tsx"
+git commit -m "feat: add HowTo, VideoObject, SoftwareApplication, WebSite+SearchAction schema"
+```
+
+---
+
+### Task 19: Topic-queue mode for the ingest pipeline (programmatic page drafting)
+
+**Files:**
+- Create: `scripts/topics.config.ts`
+- Modify: `scripts/draft.ts` (add `draftFromTopic`)
+- Modify: `scripts/ingest.ts` (run RSS mode then topic-queue mode)
+- Test: `scripts/draft.test.ts` (add a `draftFromTopic` case)
+
+**Interfaces:**
+- Consumes: `AnthropicLike` + `DraftArticle` (Task 12), `feeds.config`/`fetchFeeds` (existing run).
+- Produces:
+  - `scripts/topics.config.ts`: `export interface Topic { title: string; category: string; brief: string }`; `export const topics: Topic[]` (seed list: GPU/CPU benchmark briefs, error-code briefs, comparison briefs).
+  - `scripts/draft.ts`: `export async function draftFromTopic(topic: Topic, client: AnthropicLike, model: string): Promise<DraftArticle>` — drafts an original article body from the topic brief; same JSON contract as `draftArticle`.
+  - `scripts/ingest.ts`: after the RSS pass, drafts any topics not already in `content/.seen.json` (keyed by a `topic:` prefix), writing **drafts only** with the topic's `category` in frontmatter.
+
+- [ ] **Step 1: Write `scripts/topics.config.ts`**
+
+```ts
+export interface Topic {
+  title: string;
+  category: string;
+  brief: string;
+}
+
+export const topics: Topic[] = [
+  {
+    title: "GTA 6 on the RTX 4060 — Expected Performance",
+    category: "requirements",
+    brief:
+      "Analyze expected GTA 6 performance on an NVIDIA RTX 4060: likely settings, resolution, and FPS expectations based on the announced console target and comparable open-world titles. Be clear these are projections, not confirmed benchmarks.",
+  },
+  {
+    title: "GTA 6 'Game Won't Launch' — Common Causes & Fixes",
+    category: "errors",
+    brief:
+      "Write a troubleshooting guide for a GTA 6 launcher that won't start: driver updates, verifying files, DirectX, antivirus, admin rights. Generic-but-accurate PC troubleshooting framed for GTA 6.",
+  },
+  {
+    title: "GTA 6 vs GTA 5 — What's Actually Different",
+    category: "comparisons",
+    brief:
+      "Compare GTA 6 to GTA 5 across what Rockstar has officially confirmed or strongly signaled: setting, scope, platforms. Avoid inventing specs; flag rumors as rumors.",
+  },
+];
+```
+
+- [ ] **Step 2: Add the failing `draftFromTopic` test**
+
+Append to `scripts/draft.test.ts`:
+```ts
+import { draftFromTopic } from "./draft";
+
+describe("draftFromTopic", () => {
+  const fakeJson = JSON.stringify({
+    title: "GTA 6 on RTX 4060",
+    slug: "gta-6-rtx-4060",
+    description: "Projected performance.",
+    body: "Analysis.",
+    tags: ["gta6", "benchmark"],
+  });
+  const fakeClient = {
+    messages: { create: async () => ({ content: [{ type: "text", text: fakeJson }] }) },
+  };
+
+  it("drafts a structured article from a topic brief", async () => {
+    const draft = await draftFromTopic(
+      { title: "GTA 6 on RTX 4060", category: "requirements", brief: "brief text" },
+      fakeClient,
+      "claude-opus-4-8"
+    );
+    expect(draft.slug).toBe("gta-6-rtx-4060");
+    expect(draft.tags).toContain("benchmark");
+  });
+});
+```
+
+- [ ] **Step 3: Run to verify it fails**
+
+Run: `npm test -- scripts/draft.test.ts`
+Expected: FAIL — `draftFromTopic` is not exported.
+
+- [ ] **Step 4: Add `draftFromTopic` to `scripts/draft.ts`**
+
+Add the import at the top:
+```ts
+import type { Topic } from "./topics.config";
+```
+And append this function (it reuses the same `slugify` already defined in the file):
+```ts
+const TOPIC_SYSTEM = `You are an editorial assistant for a GTA 6 site. Write an ORIGINAL, accurate
+article from the given brief. Only state things that are officially confirmed or clearly framed as
+projection/rumor. Never fabricate specs or benchmarks. Respond ONLY with JSON:
+{"title": string, "slug": string, "description": string, "body": string (markdown), "tags": string[]}.`;
+
+export async function draftFromTopic(
+  topic: Topic,
+  client: AnthropicLike,
+  model: string
+): Promise<DraftArticle> {
+  const userPrompt = `Topic: ${topic.title}
+Category: ${topic.category}
+Brief: ${topic.brief}
+
+Write the article (400-800 words). Output JSON only.`;
+
+  const response = await client.messages.create({
+    model,
+    max_tokens: 16000,
+    system: TOPIC_SYSTEM,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  const text = response.content.find((b) => b.type === "text" && b.text)?.text;
+  if (!text) throw new Error(`draftFromTopic: model returned no text for "${topic.title}"`);
+
+  let parsed: Partial<DraftArticle>;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`draftFromTopic: model output was not valid JSON for "${topic.title}"`);
+  }
+
+  return {
+    title: parsed.title ?? topic.title,
+    slug: parsed.slug ? slugify(parsed.slug) : slugify(parsed.title ?? topic.title),
+    description: parsed.description ?? "",
+    body: parsed.body ?? "",
+    tags: Array.isArray(parsed.tags) ? parsed.tags : ["gta6"],
+  };
+}
+```
+
+- [ ] **Step 5: Run to verify the draft tests pass**
+
+Run: `npm test -- scripts/draft.test.ts`
+Expected: PASS (original 2 + new 1 = 3).
+
+- [ ] **Step 6: Add topic-queue pass to `scripts/ingest.ts`**
+
+Add imports near the top:
+```ts
+import { topics } from "./topics.config";
+import { draftFromTopic } from "./draft";
+```
+Add this helper above `main()`:
+```ts
+function topicKey(title: string): string {
+  return `topic:${title}`;
+}
+
+function toMdxWithCategory(mdx: string, category: string): string {
+  // Insert a category line into the frontmatter block (between the leading --- markers).
+  return mdx.replace(/^---\n/, `---\ncategory: "${category}"\n`);
+}
+```
+Inside `main()`, after the RSS loop writes drafts and **before** `saveSeen(seen)`, add the topic pass:
+```ts
+  for (const topic of topics) {
+    const key = topicKey(topic.title);
+    if (seen.has(key)) continue;
+    try {
+      const draft = await draftFromTopic(topic, client, model);
+      const mdx = toMdxWithCategory(
+        toMdx(draft, { title: topic.title, link: "", contentSnippet: "", sourceFeed: "topic-queue" }, dateISO),
+        topic.category
+      );
+      const file = path.join(DRAFTS_DIR, draftFilename(draft.slug, dateISO));
+      fs.writeFileSync(file, mdx);
+      seen.add(key);
+      written++;
+      console.log(`[ingest] wrote topic draft: ${path.basename(file)}`);
+    } catch (err) {
+      console.warn(`[ingest] topic draft failed for "${topic.title}": ${(err as Error).message}`);
+    }
+  }
+```
+
+> Note: for topic drafts the `sources` frontmatter is `[""]` from `toMdx`'s use of `item.link`.
+> Since topic pages have no single source URL, change the writer call to provide a real source:
+> in the topic pass above, the `link: ""` produces an empty source which the frontmatter schema
+> (min 1 url) would reject at build time. **Fix:** pass the canonical homepage as the source —
+> change `link: ""` to `link: siteConfig.url`. Add `import { siteConfig } from "@/site.config";`
+> at the top of `ingest.ts`. (Editorial replaces it with real sources during review.)
+
+- [ ] **Step 7: Apply the source fix from the note**
+
+In `scripts/ingest.ts`, add `import { siteConfig } from "@/site.config";` and change the topic pass's
+`link: ""` to `link: siteConfig.url`.
+
+- [ ] **Step 8: Run the full suite and build**
+
+Run: `npm test && npm run build`
+Expected: all tests pass; build succeeds.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add scripts/topics.config.ts scripts/draft.ts scripts/draft.test.ts scripts/ingest.ts
+git commit -m "feat: add topic-queue mode for programmatic page drafting (drafts only)"
+```
+
+---
+
 ## Final Verification
 
-After all tasks:
+After all tasks (v1 + v2):
 
-- [ ] Run `npm test` — every test file passes (site.config, posts, affiliates, countdown, subscribe, seo, filter, draft, writeDraft, validate-content).
-- [ ] Run `npm run build` — `prebuild` validation passes; all routes build; static pages are static; `/news/[slug]` enumerated via `generateStaticParams`.
-- [ ] Grep guard — confirm the pipeline never writes to `content/posts/`: `grep -rn "content/posts" scripts/` should show only `validate-content.ts` (read) — `ingest.ts` writes only to `content/drafts/`.
-- [ ] Grep guard — every affiliate link path uses `sponsored nofollow`: confirm `components/AffiliateLink.tsx` contains `rel="sponsored nofollow"`.
-- [ ] Manual check — `npm run dev`, visit `/gta-6-download`: status banner, countdown, official store buttons (each opens in a new tab with `rel="sponsored nofollow"`), email form. Visit `/feed.xml`, `/sitemap.xml`, `/robots.txt` and confirm they render.
+- [ ] Run `npm test` — every test file passes (site.config, posts, affiliates, countdown, subscribe, seo, filter, draft, writeDraft, validate-content, taxonomy, download-pages).
+- [ ] Run `npm run build` — `prebuild` validation passes; all routes build; static pages are static; `/news/[slug]` and `/[downloadSlug]` enumerated via `generateStaticParams`.
+- [ ] Grep guard — the pipeline never writes to `content/posts/`: `grep -rn "content/posts" scripts/` shows only `validate-content.ts` (read). Both `ingest.ts` passes (RSS + topic) write only to `content/drafts/`.
+- [ ] Grep guard — every affiliate link uses `sponsored nofollow`: `components/AffiliateLink.tsx` contains `rel="sponsored nofollow"`.
+- [ ] **Honest-framing guard** — confirm every `intent: "no_product"` page in `lib/download-pages.ts` has a non-empty `warning` (enforced by the test in Task 16) and renders the scam warning. No page implies a download exists for mobile/android/ios/apk.
+- [ ] **No file distribution** — grep the repo for any download/host of game files: `grep -rniE "\.(apk|exe|zip|rar|iso)\b" app lib components scripts content` returns no link/host of an actual game file (matches in copy that *warn about* such files are fine).
+- [ ] Manual check — `npm run dev`: visit `/gta-6-download`, `/gta-6-download-pc`, `/gta-6-download-apk` (must show the honest "no APK exists" warning + official links), `/downloads`, `/requirements`, an article page (related block renders). Visit `/feed.xml`, `/sitemap.xml` (includes silos + download slugs), `/robots.txt`.
 - [ ] Confirm `ANTHROPIC_API_KEY` is documented in `.env.example` and required by `ingest.ts` (aborts cleanly if unset).
+- [ ] Read `docs/growth-playbook.md` — confirms link-building, social, publishing-cadence, and KPI work is captured as ops (not code).
 

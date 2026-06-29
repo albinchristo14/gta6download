@@ -67,6 +67,54 @@ Two halves:
 ### Explicitly out of scope (YAGNI)
 Comments, user accounts, on-site search, i18n. Revisit only if traffic justifies.
 
+## Expansion (v2) — Silos, Programmatic Pages, Scale
+
+Added 2026-06-29 after strategy review. Extends the v1 structure above; does not replace it.
+
+### Content silos & taxonomy
+Real categories (not just URL prefixes), each with an index page and per-article related-content
+linking. Silos: **Downloads, Installation, Requirements, Errors, News, Guides, Comparisons.**
+Articles carry a `category` and `tags`; every article renders a "Related" block (Guides / News /
+Downloads / Troubleshooting / Requirements / FAQs).
+
+### Download silo pages
+`/gta-6-download-pc`, `-steam`, `-epic`, `-rockstar`, `-ps5`, `-xbox`, `-windows-11`, `-offline`,
+`-online`, plus honest-framing pages for terms with no real product: `-mobile`, `-android`, `-ios`,
+`-apk`. Each download-silo page targets its keyword and routes to official affiliate links.
+
+### Honest-framing constraint (LOCKED — applies site-wide)
+Pages that target "download" terms for which **no legitimate product exists** (mobile, Android, iOS,
+APK) must tell the truth: state plainly that no official version exists, warn about scams/malware,
+and convert to official pre-order/buy links + email capture. We do **not** publish pages implying a
+download exists when it does not, and we **never host, link to, or distribute game files, cracks,
+APKs, cheats, or save tools.** Rationale: such pages are an AdSense-rejection and site-wide-trust
+risk on a new `.store` domain, and they fail user intent — which drags down rankings for the
+legitimate pages too. This constraint is non-negotiable in the build; aggressive *keyword targeting*
+is fine, deceptive *content* is not.
+
+### Programmatic pages (data-driven, AI-written, human-reviewed)
+Page families generated from a topic queue: **GPU+GTA6, CPU+GTA6, error-code fixes, platform
+differences, comparisons (GTA 6 vs X).** Each page's body is **drafted by the Claude pipeline and
+human-reviewed before publish** (same drafts-only gate as RSS). A programmatic page is published only
+when it has genuine, differentiated content — no empty templated doorway pages. Scale target is
+volume-permissive but quality-gated: pages exist because they say something real, not because a
+template exists.
+
+### Expanded JSON-LD schema set
+Add to the v1 set (Article/FAQ/Breadcrumb/Organization): **HowTo** (installation/error guides),
+**VideoObject** (video embeds), **SoftwareApplication** (download/requirements pages),
+**WebSite + SearchAction** (sitelinks search box on the homepage).
+
+### Internal linking discipline
+Every article includes a related-content block linking across silos. Target a healthy internal-link
+density per page (the v1 plan wires the reusable block; editorial fills specific links).
+
+### Out of scope for the build (separate growth/ops playbook, not code)
+Link building, social strategy, the publishing-volume calendar/cadence, daily-posting operations,
+and KPI/analytics-account setup are **operations**, not site features. Captured in a separate
+`docs/growth-playbook.md`, not as implementation tasks. Analytics *wiring* (GA/Clarity/GSC
+verification tags) is a small build task; running the campaigns is not.
+
 ## Content Pipeline
 
 Single script `scripts/ingest.ts`, run via `npm run ingest`.
