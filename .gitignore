@@ -7,3 +7,5 @@ out
 next-env.d.ts
 content/.seen.json
 .DS_Store
+.freebuff
+.vercel
