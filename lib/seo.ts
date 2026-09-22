@@ -43,7 +43,8 @@ export function pageMetadata({
       description,
       images: [absoluteUrl("/opengraph-image")],
     },
-    ...(index ? {} : { robots: { index: false, follow: false } }),
+    // Unindexed placeholders still hand crawlers through to the real pages they link to.
+    ...(index ? {} : { robots: { index: false, follow: true } }),
   };
 }
 
@@ -58,17 +59,20 @@ export function organizationJsonLd(): object {
   };
 }
 
-export function articleJsonLd(fm: PostFrontmatter): object {
+export function articleJsonLd(
+  fm: PostFrontmatter,
+  opts: { type?: "NewsArticle" | "Article"; path?: string } = {},
+): object {
   return {
     "@context": "https://schema.org",
-    "@type": "NewsArticle",
+    "@type": opts.type ?? "NewsArticle",
     headline: fm.title,
     description: fm.description,
     datePublished: fm.date,
     dateModified: fm.updated ?? fm.date,
     author: { "@type": "Organization", name: fm.author },
     publisher: { "@type": "Organization", name: siteConfig.name },
-    mainEntityOfPage: absoluteUrl(`/news/${fm.slug}`),
+    mainEntityOfPage: absoluteUrl(opts.path ?? `/news/${fm.slug}`),
     ...(fm.image ? { image: absoluteUrl(fm.image) } : {}),
   };
 }

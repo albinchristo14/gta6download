@@ -64,10 +64,10 @@ describe("pageMetadata", () => {
     expect(md.openGraph?.images).toBeTruthy();
   });
 
-  it("noindexes thin placeholder pages on request", () => {
+  it("noindexes thin placeholder pages but still lets crawlers follow out", () => {
     expect(pageMetadata({ title: "X", description: "Y", path: "/gpu/z", index: false }).robots).toEqual({
       index: false,
-      follow: false,
+      follow: true,
     });
   });
 
