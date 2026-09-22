@@ -65,7 +65,7 @@ export default function FaqPage() {
           {[
             { href: "/gta-6-download", label: "Download status hub", blurb: "Live availability, countdown and official pre-order links." },
             { href: "/gta-6-system-requirements", label: "System requirements", blurb: "What is official, what is projection, and why the two get confused." },
-            { href: "/news/gta-6-download-scams-and-malware-safety", label: "Scam safety guide", blurb: "What fake download files actually do, and how to recover." },
+            { href: "/news/how-to-avoid-gta-6-download-scams", label: "Scam safety guide", blurb: "What fake download files actually do, and how to recover." },
           ].map((card) => (
             <Link key={card.href} href={card.href} className="card p-5 hover:border-brand-400">
               <h2 className="text-sm font-bold text-ink-950">{card.label}</h2>

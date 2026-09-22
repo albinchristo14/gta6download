@@ -111,7 +111,7 @@ export default function ReleaseDatePage() {
         </ol>
         <p className="mt-5 max-w-3xl text-sm leading-6 text-ink-600">
           Full walkthrough, including the console settings that decide whether a pre-load runs:{" "}
-          <Link href="/news/gta-6-preload-and-install-guide" className="font-semibold text-brand-700 underline underline-offset-2">
+          <Link href="/news/how-to-install-gta-6" className="font-semibold text-brand-700 underline underline-offset-2">
             GTA 6 pre-load and install guide
           </Link>
           .

@@ -37,7 +37,7 @@ const GTA5_BASELINE = [
 ];
 
 export default function SystemRequirementsPage() {
-  const deepDive = getPublishedPostBySlug("gta-6-system-requirements-projected");
+  const deepDive = getPublishedPostBySlug("gta-6-system-requirements-no-official-pc-specs");
 
   return (
     <>
@@ -167,7 +167,7 @@ export default function SystemRequirementsPage() {
           <p>
             Series S owners in particular should check free space on the 512 GB drive before the reported
             12 November pre-load: our{" "}
-            <Link href="/news/gta-6-preload-and-install-guide" className="font-semibold text-brand-700 underline underline-offset-2">
+            <Link href="/news/how-to-install-gta-6" className="font-semibold text-brand-700 underline underline-offset-2">
               pre-load and install guide
             </Link>{" "}
             covers the console settings that make the difference.

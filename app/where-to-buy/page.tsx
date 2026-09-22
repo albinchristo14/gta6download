@@ -136,15 +136,15 @@ export default function WhereToBuyPage() {
           </li>
           <li>
             Pick for the bonus, not the sticker price: retailer in-game extras differ, and the{" "}
-            <Link href="/gta-6-editions-compared-which-to-preorder" className="font-semibold text-brand-700 underline underline-offset-2">
-              editions comparison
+            <Link href="/news/where-to-buy-gta-6-legitimately" className="font-semibold text-brand-700 underline underline-offset-2">
+              edition-by-edition breakdown
             </Link>{" "}
             lays out what each one actually includes.
           </li>
           <li>
             Skip anyone who cannot name the platform. If a checkout page offers a PC copy, a mobile
             copy or "early access", it is not selling GTA 6 — see{" "}
-            <Link href="/gta-6-scams-malware-download-safety" className="font-semibold text-brand-700 underline underline-offset-2">
+            <Link href="/news/how-to-avoid-gta-6-download-scams" className="font-semibold text-brand-700 underline underline-offset-2">
               how these scams work
             </Link>
             .
@@ -173,8 +173,8 @@ export default function WhereToBuyPage() {
             <h2 className="text-lg font-bold text-ink-950">Related guides</h2>
             <ul className="mt-3 space-y-2 text-sm">
               <li>
-                <Link href="/gta-6-preorder-guide" className="font-semibold text-brand-700 hover:underline">
-                  Pre-order guide: bonuses per storefront
+                <Link href="/news/can-you-download-gta-6-right-now" className="font-semibold text-brand-700 hover:underline">
+                  Which storefronts can actually deliver a copy
                 </Link>
               </li>
               <li>

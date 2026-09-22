@@ -71,7 +71,7 @@ export const downloadPages: DownloadPage[] = [
       "Pre-ordering a 'PC edition' is impossible. If a checkout page offers one, it is not selling GTA 6.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-system-requirements-projected",
+    relatedSlug: "gta-6-system-requirements-no-official-pc-specs",
   },
   {
     slug: "gta-6-download-steam",
@@ -89,7 +89,7 @@ export const downloadPages: DownloadPage[] = [
       "If a PC version is ever announced, the legitimate routes will be obvious: an official storefront page with a publisher, a price and system requirements.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-system-requirements-projected",
+    relatedSlug: "gta-6-system-requirements-no-official-pc-specs",
   },
   {
     slug: "gta-6-download-epic",
@@ -125,7 +125,7 @@ export const downloadPages: DownloadPage[] = [
       "Rockstar Support's published guidance on launcher install and error codes applies to games that exist, not to GTA 6.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-download-errors-fix",
+    relatedSlug: "gta-6-download-and-install-errors",
   },
   {
     slug: "gta-6-download-windows-11",
@@ -143,7 +143,7 @@ export const downloadPages: DownloadPage[] = [
       "The honest requirement signal today is GTA V's: Rockstar's own PC list for its previous game requires AVX-capable hardware and 8 GB of RAM.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-system-requirements-projected",
+    relatedSlug: "gta-6-system-requirements-no-official-pc-specs",
   },
   {
     slug: "gta-6-download-offline",
@@ -197,7 +197,7 @@ export const downloadPages: DownloadPage[] = [
       "A 'GTA 6 APK' file is not a game build. It is an app of unknown origin asking for device permissions.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-download-scams-and-malware-safety",
+    relatedSlug: "how-to-avoid-gta-6-download-scams",
   },
   {
     slug: "gta-6-android-download",
@@ -215,7 +215,7 @@ export const downloadPages: DownloadPage[] = [
       "Play Protect does not make a fake GTA 6 APK safe: the file is not a game in the first place.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-download-scams-and-malware-safety",
+    relatedSlug: "how-to-avoid-gta-6-download-scams",
   },
   {
     slug: "gta-6-ios-download",
@@ -233,7 +233,7 @@ export const downloadPages: DownloadPage[] = [
       "Real GTA titles on the App Store are the older re-releases and GTA: San Andreas, not GTA 6.",
     ],
     warning: SCAM_WARNING,
-    relatedSlug: "gta-6-download-scams-and-malware-safety",
+    relatedSlug: "how-to-avoid-gta-6-download-scams",
   },
   {
     slug: "gta-6-apk-download",
@@ -252,7 +252,7 @@ export const downloadPages: DownloadPage[] = [
     ],
     warning:
       "There is a repeatable shape to these operations: a storefront claims a Rockstar partnership, takes payment for 'early access' that cannot exist, moves to a new domain when called out, and has no refund process. If you have already paid, cancel the card rather than waiting on that merchant.",
-    relatedSlug: "gta-6-download-scams-and-malware-safety",
+    relatedSlug: "how-to-avoid-gta-6-download-scams",
   },
 ];
 

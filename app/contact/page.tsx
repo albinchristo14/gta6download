@@ -80,7 +80,7 @@ export default function ContactPage() {
             <li>
               <strong>Support requests belong with the seller.</strong> A pre-order that has not
               appeared in your library is a PlayStation, Xbox or retailer account issue. Our{" "}
-              <Link href="/news/gta-6-download-errors-fix">error guide</Link> lists the checks that
+              <Link href="/news/gta-6-download-and-install-errors">error guide</Link> lists the checks that
               actually resolve it.
             </li>
             <li>
