@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+      Arial, "Apple Color Emoji", sans-serif;
+    --font-display: "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-white text-ink-900 antialiased;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-950;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
+  }
+
+  .card {
+    @apply rounded-xl border border-ink-200 bg-white shadow-card;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition-colors;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-500;
+  }
+
+  .btn-secondary {
+    @apply btn border border-ink-300 bg-white text-ink-900 hover:border-brand-400 hover:text-brand-700;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600;
+  }
+
+  /* Typography for MDX article bodies (no external prose plugin). */
+  .prose-gta {
+    @apply text-[1.0625rem] leading-7 text-ink-800;
+  }
+  .prose-gta h2 {
+    @apply mb-3 mt-10 text-2xl font-bold tracking-tight text-ink-950;
+  }
+  .prose-gta h3 {
+    @apply mb-2 mt-8 text-xl font-semibold tracking-tight text-ink-950;
+  }
+  .prose-gta p {
+    @apply my-5;
+  }
+  .prose-gta ul {
+    @apply my-5 list-disc space-y-2 pl-6;
+  }
+  .prose-gta ol {
+    @apply my-5 list-decimal space-y-2 pl-6;
+  }
+  .prose-gta a {
+    @apply font-medium text-brand-700 underline decoration-brand-300 underline-offset-2 hover:text-brand-800;
+  }
+  .prose-gta blockquote {
+    @apply my-6 border-l-4 border-brand-300 bg-brand-50 py-2 pl-4 pr-3 italic text-ink-700;
+  }
+  .prose-gta code {
+    @apply rounded bg-ink-100 px-1.5 py-0.5 text-[0.9em] text-ink-900;
+  }
+  .prose-gta pre {
+    @apply my-6 overflow-x-auto rounded-lg bg-ink-900 p-4 text-sm text-ink-100;
+  }
+  .prose-gta pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+  .prose-gta table {
+    @apply my-6 w-full border-collapse text-sm;
+  }
+  .prose-gta th {
+    @apply border-b-2 border-ink-300 bg-ink-50 px-3 py-2 text-left font-semibold;
+  }
+  .prose-gta td {
+    @apply border-b border-ink-200 px-3 py-2 align-top;
+  }
+  .prose-gta hr {
+    @apply my-10 border-ink-200;
+  }
+}
+
+@layer utilities {
+  .hero-gradient {
+    background-image: radial-gradient(
+        1000px 500px at 15% -10%,
+        rgba(127, 61, 251, 0.35),
+        transparent 60%
+      ),
+      radial-gradient(900px 500px at 85% 0%, rgba(249, 115, 22, 0.28), transparent 55%),
+      linear-gradient(180deg, #07070c 0%, #12121d 100%);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
