@@ -1,0 +1,92 @@
+[
+  {
+    "slug": "ryzen-5-2600",
+    "name": "AMD Ryzen 5 2600",
+    "vendor": "amd",
+    "cores": 6,
+    "threads": 12,
+    "tier": "low",
+    "releaseYear": 2018
+  },
+  {
+    "slug": "core-i5-8400",
+    "name": "Intel Core i5-8400",
+    "vendor": "intel",
+    "cores": 6,
+    "threads": 6,
+    "tier": "low",
+    "releaseYear": 2017
+  },
+  {
+    "slug": "core-i5-10400f",
+    "name": "Intel Core i5-10400F",
+    "vendor": "intel",
+    "cores": 6,
+    "threads": 12,
+    "tier": "low",
+    "releaseYear": 2020
+  },
+  {
+    "slug": "ryzen-5-5600",
+    "name": "AMD Ryzen 5 5600",
+    "vendor": "amd",
+    "cores": 6,
+    "threads": 12,
+    "tier": "mid",
+    "releaseYear": 2022
+  },
+  {
+    "slug": "core-i5-12400f",
+    "name": "Intel Core i5-12400F",
+    "vendor": "intel",
+    "cores": 6,
+    "threads": 12,
+    "tier": "mid",
+    "releaseYear": 2022
+  },
+  {
+    "slug": "ryzen-7-5800x3d",
+    "name": "AMD Ryzen 7 5800X3D",
+    "vendor": "amd",
+    "cores": 8,
+    "threads": 16,
+    "tier": "mid",
+    "releaseYear": 2022
+  },
+  {
+    "slug": "core-i5-13600kf",
+    "name": "Intel Core i5-13600KF",
+    "vendor": "intel",
+    "cores": 14,
+    "threads": 20,
+    "tier": "high",
+    "releaseYear": 2022
+  },
+  {
+    "slug": "ryzen-7-7700x",
+    "name": "AMD Ryzen 7 7700X",
+    "vendor": "amd",
+    "cores": 8,
+    "threads": 16,
+    "tier": "high",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "ryzen-7-7800x3d",
+    "name": "AMD Ryzen 7 7800X3D",
+    "vendor": "amd",
+    "cores": 8,
+    "threads": 16,
+    "tier": "high",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "core-i9-14900kf",
+    "name": "Intel Core i9-14900KF",
+    "vendor": "intel",
+    "cores": 24,
+    "threads": 32,
+    "tier": "high",
+    "releaseYear": 2023
+  }
+]

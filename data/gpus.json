@@ -1,0 +1,114 @@
+[
+  {
+    "slug": "rtx-3050",
+    "name": "NVIDIA GeForce RTX 3050 8GB",
+    "vendor": "nvidia",
+    "vramGb": 8,
+    "tier": "entry",
+    "releaseYear": 2022
+  },
+  {
+    "slug": "rx-6600",
+    "name": "AMD Radeon RX 6600",
+    "vendor": "amd",
+    "vramGb": 8,
+    "tier": "entry",
+    "releaseYear": 2021
+  },
+  {
+    "slug": "gtx-1660-super",
+    "name": "NVIDIA GeForce GTX 1660 Super",
+    "vendor": "nvidia",
+    "vramGb": 6,
+    "tier": "entry",
+    "releaseYear": 2019
+  },
+  {
+    "slug": "rtx-3060-ti",
+    "name": "NVIDIA GeForce RTX 3060 Ti",
+    "vendor": "nvidia",
+    "vramGb": 8,
+    "tier": "mainstream",
+    "releaseYear": 2020
+  },
+  {
+    "slug": "rtx-4060",
+    "name": "NVIDIA GeForce RTX 4060",
+    "vendor": "nvidia",
+    "vramGb": 8,
+    "tier": "mainstream",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "rtx-4060-ti-16gb",
+    "name": "NVIDIA GeForce RTX 4060 Ti 16GB",
+    "vendor": "nvidia",
+    "vramGb": 16,
+    "tier": "mainstream",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "rx-6700-xt",
+    "name": "AMD Radeon RX 6700 XT",
+    "vendor": "amd",
+    "vramGb": 12,
+    "tier": "mainstream",
+    "releaseYear": 2021
+  },
+  {
+    "slug": "rx-7600",
+    "name": "AMD Radeon RX 7600",
+    "vendor": "amd",
+    "vramGb": 8,
+    "tier": "mainstream",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "rtx-4070",
+    "name": "NVIDIA GeForce RTX 4070",
+    "vendor": "nvidia",
+    "vramGb": 12,
+    "tier": "high",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "rtx-4070-super",
+    "name": "NVIDIA GeForce RTX 4070 Super",
+    "vendor": "nvidia",
+    "vramGb": 12,
+    "tier": "high",
+    "releaseYear": 2024
+  },
+  {
+    "slug": "rx-7800-xt",
+    "name": "AMD Radeon RX 7800 XT",
+    "vendor": "amd",
+    "vramGb": 16,
+    "tier": "high",
+    "releaseYear": 2023
+  },
+  {
+    "slug": "rtx-4080-super",
+    "name": "NVIDIA GeForce RTX 4080 Super",
+    "vendor": "nvidia",
+    "vramGb": 16,
+    "tier": "ultra",
+    "releaseYear": 2024
+  },
+  {
+    "slug": "rtx-4090",
+    "name": "NVIDIA GeForce RTX 4090",
+    "vendor": "nvidia",
+    "vramGb": 24,
+    "tier": "ultra",
+    "releaseYear": 2022
+  },
+  {
+    "slug": "rx-7900-xtx",
+    "name": "AMD Radeon RX 7900 XTX",
+    "vendor": "amd",
+    "vramGb": 24,
+    "tier": "ultra",
+    "releaseYear": 2023
+  }
+]

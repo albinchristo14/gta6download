@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "gta-6-preload-not-available",
+    "name": "GTA 6 pre-load shows \"not available\" or \"coming soon\"",
+    "category": "installation",
+    "platform": "PS5 / Xbox Series X|S",
+    "phase": "preload",
+    "symptom": "The store page shows the game but there is no Download / Pre-load button."
+  },
+  {
+    "slug": "gta-6-purchase-not-found",
+    "name": "GTA 6 pre-order not showing in my library",
+    "category": "errors",
+    "platform": "PS5 / Xbox Series X|S",
+    "phase": "preorder",
+    "symptom": "You paid for a pre-order but the game is nowhere in Your Collection or Library."
+  },
+  {
+    "slug": "gta-6-licence-error",
+    "name": "GTA 6 licence or entitlement error at launch",
+    "category": "errors",
+    "platform": "PS5 / Xbox Series X|S",
+    "phase": "launch",
+    "symptom": "The game refuses to start and reports that no licence was found for this account."
+  },
+  {
+    "slug": "gta-6-insufficient-storage",
+    "name": "Not enough storage to install GTA 6",
+    "category": "requirements",
+    "platform": "PS5 / Xbox Series X|S",
+    "phase": "preload",
+    "symptom": "The console blocks the download and says there is not enough free space."
+  },
+  {
+    "slug": "gta-6-download-stuck-paused",
+    "name": "GTA 6 download stuck, paused or at 0%",
+    "category": "errors",
+    "platform": "PS5 / Xbox Series X|S",
+    "phase": "preload",
+    "symptom": "The queue shows GTA 6 but the percentage never moves, or it silently pauses."
+  },
+  {
+    "slug": "gta-6-code-in-box-not-redeeming",
+    "name": "The code inside the GTA 6 box will not redeem",
+    "category": "errors",
+    "platform": "PS5 / Xbox Series X|S",
+    "phase": "launch",
+    "symptom": "You bought a physical copy, entered the code, and the store rejects it."
+  },
+  {
+    "slug": "gta-6-rockstar-launcher-download-failed",
+    "name": "GTA 6 download failed in the Rockstar Launcher",
+    "category": "errors",
+    "platform": "PC (only if a PC version is announced)",
+    "phase": "launch",
+    "symptom": "A PC download stalls or fails in the launcher."
+  },
+  {
+    "slug": "gta-6-directx-error",
+    "name": "GTA 6 DirectX error on startup",
+    "category": "errors",
+    "platform": "PC (only if a PC version is announced)",
+    "phase": "launch",
+    "symptom": "The game crashes to desktop with a DirectX device error."
+  },
+  {
+    "slug": "gta-6-wont-launch",
+    "name": "GTA 6 won't launch",
+    "category": "errors",
+    "platform": "All",
+    "phase": "launch",
+    "symptom": "You select the game, it appears to start, then nothing happens."
+  },
+  {
+    "slug": "gta-6-black-screen",
+    "name": "GTA 6 black screen on startup",
+    "category": "errors",
+    "platform": "PC (only if a PC version is announced)",
+    "phase": "launch",
+    "symptom": "Audio runs but the display stays black."
+  }
+]
