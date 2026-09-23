@@ -18,18 +18,25 @@ export function validateEmail(input: unknown): string | null {
 
 type FetchLike = (url: string, init?: Record<string, unknown>) => Promise<{ ok: boolean; status: number }>;
 
+export interface SubscribeOptions {
+  apiKey?: string;
+  audienceId?: string;
+  /** Recorded in the dev fallback only: Resend has no per-contact metadata, so the source page cannot travel with the address. */
+  context?: unknown;
+  fetchImpl?: FetchLike;
+}
+
 /**
- * Validates an address and forwards it to the configured email provider.
- * With no endpoint configured the signup is accepted and logged, so the site works
- * before ConvertKit/Buttondown are connected. `fetchImpl` is injectable for tests.
+ * Validates an address and adds it to a Resend audience. Resend creates-or-reuses the
+ * contact for that address, so repeat signups are harmless.
+ *
+ * With no key or audience the signup is accepted and logged rather than stored, which keeps
+ * local dev usable; the Pages Function refuses earlier so production never says "you are on
+ * the list" about a list that does not exist. `fetchImpl` is injectable for tests.
  */
 export async function subscribe(
   input: unknown,
-  opts: {
-    endpoint?: string;
-    context?: unknown;
-    fetchImpl?: FetchLike;
-  } = {},
+  opts: SubscribeOptions = {},
 ): Promise<SubscribeResult> {
   const email = typeof input === "object" && input !== null ? (input as { email?: unknown }).email : input;
   const normalized = validateEmail(email);
@@ -38,23 +45,27 @@ export async function subscribe(
     return { status: 400, body: { ok: false, message: "Please enter a valid email address." } };
   }
 
-  const endpoint = opts.endpoint ?? process.env.EMAIL_PROVIDER_ENDPOINT;
-  if (!endpoint) {
-    console.log(`[subscribe] accepted ${normalized} (no provider endpoint configured)`);
+  const { apiKey, audienceId } = opts;
+  if (!apiKey || !audienceId) {
+    console.log(
+      `[subscribe] accepted ${normalized} from ${String(opts.context ?? "unknown")} (no Resend key or audience configured)`,
+    );
     return {
       status: 200,
       body: { ok: true, message: "You are on the list. We will email you when a real download exists." },
     };
   }
 
+  // Resend has no metadata field on a contact, so `context` cannot travel with the address.
   const doFetch: FetchLike =
-    opts.fetchImpl ?? ((url, init) => fetch(url, init as RequestInit).then((r) => ({ ok: r.ok, status: r.status })));
+    opts.fetchImpl ??
+    ((url, init) => fetch(url, init as RequestInit).then((r) => ({ ok: r.ok, status: r.status })));
 
   try {
-    const res = await doFetch(endpoint, {
+    const res = await doFetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: normalized, context: opts.context ?? "" }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ email: normalized }),
     });
     if (!res.ok) {
       return { status: 502, body: { ok: false, message: "The signup service rejected the request." } };
@@ -86,7 +97,7 @@ function json(body: { ok: boolean; message: string }, status: number): Response 
  */
 export async function subscribeRequest(
   request: Request,
-  opts: { endpoint?: string; fetchImpl?: FetchLike } = {},
+  opts: SubscribeOptions = {},
 ): Promise<Response> {
   let payload: unknown;
   try {
@@ -100,6 +111,6 @@ export async function subscribeRequest(
     return json(HONEYPOT_ACCEPT, 200);
   }
 
-  const result = await subscribe(body, { endpoint: opts.endpoint, context: body.context, fetchImpl: opts.fetchImpl });
+  const result = await subscribe(body, { ...opts, context: body.context });
   return json(result.body, result.status);
 }

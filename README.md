@@ -67,9 +67,10 @@ ones in every other category — keep the `/news/<slug>` URL.
   render `rel="sponsored nofollow noopener"` and each use carries an FTC disclosure.
 - **Display ads:** `components/AdSlot.tsx` renders nothing until `NEXT_PUBLIC_ADSENSE_CLIENT`
   and `NEXT_PUBLIC_ADS_ENABLED="true"` are both set, so no empty box ever ships.
-- **Email capture:** set `EMAIL_PROVIDER_ENDPOINT` to your provider's form action (Pages Function
-  env, or the dev route's process env). Locally, unset, the request logs the address so dev is
-  inert; in production an unset endpoint returns `503` rather than telling people they are on a
+- **Email capture:** signups are added to a Resend audience. Set `RESEND_API_KEY` and
+  `RESEND_AUDIENCE_ID` (Pages Function env, or the dev route's process env); a repeat address is
+  re-used rather than duplicated. Locally, unset, the request logs the address so dev is
+  inert; in production an unset pair returns `503` rather than telling people they are on a
   list that does not exist.
 
 ## Deploy (Cloudflare Pages)
@@ -94,7 +95,7 @@ The only server-rendered thing was `POST /api/subscribe`, and static export drop
    | `NEXT_PUBLIC_GSC_VERIFICATION` | Search Console ownership meta |
    | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_CLARITY_ID` | Analytics |
    | `NEXT_PUBLIC_ADS_ENABLED`, `NEXT_PUBLIC_ADSENSE_CLIENT` | Ad slots, off until both are set |
-   | `EMAIL_PROVIDER_ENDPOINT` | Secret. Where signups are forwarded — the Function returns 503 without it |
+   | `RESEND_API_KEY`, `RESEND_AUDIENCE_ID` | Secrets, Function runtime only. Signups become Resend contacts in that audience; the Function returns 503 without both |
 
    Never set `ANTHROPIC_API_KEY` on the host; `npm run ingest` is a local or scheduled-CI job.
 3. **Add the domain** in Pages → Custom domains. Cloudflare issues the certificate and flattens the
@@ -108,8 +109,10 @@ The only server-rendered thing was `POST /api/subscribe`, and static export drop
    curl -s -X POST https://gta6download.store/api/subscribe \
         -H 'content-type: application/json' -d '{"email":"you@example.com"}'
    ```
-   The last one answers `503` until `EMAIL_PROVIDER_ENDPOINT` is set — that is the Function being
-   honest, not a broken deploy.
+   The last one answers `503` until `RESEND_API_KEY` and `RESEND_AUDIENCE_ID` are set — that is the
+   Function being honest, not a broken deploy. A success is a `200` plus a new contact in
+   Resend → Audiences; the visitor's `context` (which page signed them up) is logged but dropped,
+   because Resend contacts carry no metadata field.
 5. **Deploying is committing.** Every content change is an MDX/JSON edit, so a push to `main`
    rebuilds and publishes; `prebuild` runs `scripts/validate-content.ts`, which fails the build on
    a duplicate slug, an over-long title, a missing source or a broken internal link. Roll back from

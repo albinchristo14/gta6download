@@ -65,9 +65,12 @@ Build only once the game ships and real data exists; building now = empty shells
 
 ## Pre-launch checklist (do once, before promoting)
 
-- [ ] Legal pages live (about/contact/privacy/disclaimer) — required for AdSense.
+- [x] Legal pages live (about/contact/privacy/disclaimer) — published at gta6download.store, required for AdSense.
 - [ ] Affiliate program approvals in `affiliates.config.ts` (Steam/Epic/Rockstar/console/retailer).
 - [ ] AdSense applied for **after** real content + legal pages exist.
 - [ ] GSC + Bing verified; sitemap submitted.
 - [ ] GA4 + Clarity IDs set.
-- [ ] Email provider connected (`EMAIL_PROVIDER_ENDPOINT`).
+- [ ] Resend credentials set as Pages env vars (`RESEND_API_KEY`, `RESEND_AUDIENCE_ID`) — the code
+  is done and the form returns 503 until they exist.
+- [ ] `gta6download.store` verified in Resend (currently `pending` DNS) before sending any
+  broadcast from a `@gta6download.store` address. Adding contacts needs neither.

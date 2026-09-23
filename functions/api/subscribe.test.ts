@@ -11,25 +11,33 @@ const post = (body: unknown) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Pages /api/subscribe", () => {
-  it("refuses to claim a signup succeeded when no provider is configured", async () => {
-    const res = await onRequestPost({ request: post({ email: "me@example.com" }), env: {} });
-    expect(res.status).toBe(503);
-    expect((await res.json()).ok).toBe(false);
+  it("refuses to claim a signup succeeded unless Resend is fully configured", async () => {
+    for (const env of [{}, { RESEND_API_KEY: "re_live" }, { RESEND_AUDIENCE_ID: "aud_1" }]) {
+      const res = await onRequestPost({ request: post({ email: "me@example.com" }), env });
+      expect(res.status).toBe(503);
+      expect((await res.json()).ok).toBe(false);
+    }
   });
 
-  it("sends the address to the endpoint held in Pages env", async () => {
-    const bodies: string[] = [];
-    vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
-      bodies.push(String(init.body));
-      return new Response("{}", { status: 200 });
+  it("adds the address to the audience named in Pages env", async () => {
+    const seen: Array<{ url: string; auth: string | null; body: string }> = [];
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+      seen.push({ url, auth: new Headers(init.headers).get("authorization"), body: String(init.body) });
+      return new Response('{"object":"contact","id":"contact_1"}', { status: 201 });
     });
 
     const res = await onRequestPost({
       request: post({ email: "me@example.com", context: "gpu" }),
-      env: { EMAIL_PROVIDER_ENDPOINT: "https://provider.invalid/forms" },
+      env: { RESEND_API_KEY: "re_live_key", RESEND_AUDIENCE_ID: "aud_1" },
     });
 
     expect(res.status).toBe(200);
-    expect(bodies).toEqual(['{"email":"me@example.com","context":"gpu"}']);
+    expect(seen).toEqual([
+      {
+        url: "https://api.resend.com/audiences/aud_1/contacts",
+        auth: "Bearer re_live_key",
+        body: '{"email":"me@example.com"}',
+      },
+    ]);
   });
 });
