@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { siteConfig } from "@/site.config";
 import { getPublishedPosts } from "@/lib/posts";
+import { isProgrammaticBody } from "@/lib/pseo";
 import { categories } from "@/lib/taxonomy";
 import { faqItems } from "@/lib/faq";
 import { pageMetadata, breadcrumbJsonLd, absoluteUrl } from "@/lib/seo";
@@ -42,7 +43,9 @@ const FACTS = [
 ];
 
 export default function HomePage() {
-  const latest = getPublishedPosts().slice(0, 6);
+  const latest = getPublishedPosts()
+    .filter((post) => !isProgrammaticBody(post.slug))
+    .slice(0, 6);
 
   return (
     <>

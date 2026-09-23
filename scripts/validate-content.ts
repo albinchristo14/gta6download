@@ -3,7 +3,7 @@ import path from "node:path";
 import { parsePost, getPublishedPosts, type Category } from "../lib/posts";
 import { categories } from "../lib/taxonomy";
 import { downloadPages } from "../lib/download-pages";
-import { pseoFamilies, loadRows, bodySlugFor } from "../lib/pseo";
+import { pseoFamilies, loadRows, bodySlugFor, postPath } from "../lib/pseo";
 
 const TITLE_MAX = 70;
 const DESCRIPTION_MAX = 160;
@@ -30,7 +30,7 @@ export function knownPaths(): Set<string> {
     "/robots.txt",
     ...categories.map((c) => c.path),
     ...downloadPages.map((d) => `/${d.slug}`),
-    ...published.map((p) => `/news/${p.slug}`),
+    ...published.map((p) => postPath(p.slug)),
   ]);
 
   // A programmatic page's URL exists whether or not it is indexed, so links to it resolve.

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getPublishedPostBySlug, getPublishedPosts } from "@/lib/posts";
+import { isProgrammaticBody } from "@/lib/pseo";
 import { articleJsonLd, breadcrumbJsonLd, pageMetadata, absoluteUrl } from "@/lib/seo";
 import { categoryMeta } from "@/lib/taxonomy";
 import { JsonLd } from "@/components/JsonLd";
@@ -35,7 +36,10 @@ function formatDate(iso: string) {
 }
 
 export function generateStaticParams() {
-  return getPublishedPosts().map((post) => ({ slug: post.slug }));
+  // Programmatic bodies are published at /gpu/… and friends; a /news/ copy would be a duplicate.
+  return getPublishedPosts()
+    .filter((post) => !isProgrammaticBody(post.slug))
+    .map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -52,6 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (isProgrammaticBody(slug)) notFound();
   const post = getPublishedPostBySlug(slug);
   if (!post) notFound();
 

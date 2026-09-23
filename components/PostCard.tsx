@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Post } from "@/lib/posts";
+import { postPath } from "@/lib/pseo";
 import { categoryMeta } from "@/lib/taxonomy";
 
 export function PostCard({ post, showCategory = true }: { post: Post; showCategory?: boolean }) {
@@ -27,7 +28,7 @@ export function PostCard({ post, showCategory = true }: { post: Post; showCatego
       </div>
 
       <h3 className="mt-3 text-lg font-bold leading-snug text-ink-950">
-        <Link href={`/news/${slug}`} className="after:absolute after:inset-0 group-hover:text-brand-700">
+        <Link href={postPath(slug)} className="after:absolute after:inset-0 group-hover:text-brand-700">
           {title}
         </Link>
       </h3>

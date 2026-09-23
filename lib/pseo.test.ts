@@ -6,6 +6,9 @@ import {
   isReady,
   getFamily,
   itemPath,
+  isProgrammaticBody,
+  postPath,
+  pseoPathForSlug,
   readyItemPaths,
 } from "./pseo";
 
@@ -74,5 +77,29 @@ describe("the readiness gate", () => {
   it("emits a path once exactly one reviewed body is published", () => {
     const row = loadRows(gpu)[0];
     expect(readyItemPaths(new Set([bodySlugFor(gpu, row)]))).toContain(itemPath(gpu, row));
+  });
+});
+
+describe("where a published body is served", () => {
+  it("points a body slug at its programmatic page instead of a /news duplicate", () => {
+    for (const family of pseoFamilies) {
+      for (const row of loadRows(family)) {
+        const slug = bodySlugFor(family, row);
+        expect(pseoPathForSlug(slug)).toBe(itemPath(family, row));
+        expect(postPath(slug)).toBe(itemPath(family, row));
+        expect(isProgrammaticBody(slug)).toBe(true);
+      }
+    }
+  });
+
+  it("leaves ordinary article slugs on the article template", () => {
+    expect(pseoPathForSlug("gta-6-pc-download-status")).toBeNull();
+    expect(postPath("gta-6-pc-download-status")).toBe("/news/gta-6-pc-download-status");
+    expect(isProgrammaticBody("gta-6-pc-download-status")).toBe(false);
+  });
+
+  it("does not invent a route for a family prefix with no matching row", () => {
+    expect(pseoPathForSlug("gpu-not-a-real-card")).toBeNull();
+    expect(postPath("gpu-not-a-real-card")).toBe("/news/gpu-not-a-real-card");
   });
 });

@@ -1,5 +1,6 @@
 import { siteConfig } from "@/site.config";
 import { getPublishedPosts } from "@/lib/posts";
+import { isProgrammaticBody } from "@/lib/pseo";
 import { categoryMeta } from "@/lib/taxonomy";
 
 const CONTROL_CHARS = new RegExp("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]", "g");
@@ -15,7 +16,8 @@ function escapeXml(input: string): string {
 }
 
 export function GET() {
-  const posts = getPublishedPosts();
+  // The feed is news; programmatic bodies live on their hardware and error pages.
+  const posts = getPublishedPosts().filter((post) => !isProgrammaticBody(post.slug));
   const base = siteConfig.url;
   const buildDate = new Date().toUTCString();
 

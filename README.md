@@ -52,8 +52,13 @@ npm run build     # prebuild = tsx scripts/validate-content.ts
 A `/gpu/…`, `/cpu/…` or `/errors/…` URL exists as soon as its data row exists, but it is
 `noindex` and absent from the sitemap until a published post with slug
 `<family>-<row-slug>` (e.g. `gpu-rtx-4060`) sits in `content/posts/`. That is why the generator
-can scale to hundreds of rows while the index stays small: 84 pages build, 43 are listed.
+can scale to hundreds of rows while the index stays small: 84 pages build, 77 are listed.
 `npm run ingest` drafts those bodies, but they stay in `content/drafts/` until reviewed.
+
+A body published this way is only ever the second half of its programmatic page: `postPath()` in
+`lib/pseo.ts` resolves it to `/gpu/rtx-4060`, so `/news/…` is never generated for it and the
+sitemap, silos, related blocks and RSS never point at a second copy. Editorial articles — the
+ones in every other category — keep the `/news/<slug>` URL.
 
 ## Monetization
 

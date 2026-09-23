@@ -3,7 +3,7 @@ import { siteConfig } from "@/site.config";
 import { getPublishedPosts } from "@/lib/posts";
 import { categories } from "@/lib/taxonomy";
 import { downloadPages } from "@/lib/download-pages";
-import { readyItemPaths } from "@/lib/pseo";
+import { isProgrammaticBody, readyItemPaths } from "@/lib/pseo";
 
 /**
  * The one place that decides what is indexable. Anything `noindex` — a programmatic
@@ -54,14 +54,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const postEntries: MetadataRoute.Sitemap = getPublishedPosts().map((post) => ({
-    url: url(`/news/${post.slug}`),
-    lastModified: new Date(
-      `${post.frontmatter.updated ?? post.frontmatter.date}T00:00:00Z`,
-    ),
-    changeFrequency: "weekly",
-    priority: 0.7,
-  }));
+  const postEntries: MetadataRoute.Sitemap = getPublishedPosts()
+    .filter((post) => !isProgrammaticBody(post.slug))
+    .map((post) => ({
+      url: url(`/news/${post.slug}`),
+      lastModified: new Date(
+        `${post.frontmatter.updated ?? post.frontmatter.date}T00:00:00Z`,
+      ),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }));
 
   // Programmatic pages enter the sitemap only once a data row AND a reviewed body exist.
   const pseoEntries: MetadataRoute.Sitemap = readyItemPaths(

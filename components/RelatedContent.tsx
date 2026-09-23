@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { postPath } from "@/lib/pseo";
 import { relatedPosts, categories } from "@/lib/taxonomy";
 
 /**
@@ -23,7 +24,7 @@ export function RelatedContent({ slug, heading = "Keep reading" }: { slug: strin
         {related.map((post) => (
           <li key={post.slug}>
             <Link
-              href={`/news/${post.slug}`}
+              href={postPath(post.slug)}
               className="flex h-full flex-col rounded-lg border border-ink-200 bg-white p-4 hover:border-brand-400"
             >
               <span className="text-[0.7rem] font-bold uppercase tracking-wider text-brand-600">

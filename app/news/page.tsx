@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getPublishedPosts } from "@/lib/posts";
+import { isProgrammaticBody } from "@/lib/pseo";
 import { categories } from "@/lib/taxonomy";
 import { siteConfig } from "@/site.config";
 import { pageMetadata, breadcrumbJsonLd, absoluteUrl } from "@/lib/seo";
@@ -23,7 +24,7 @@ const crumb = [
 ];
 
 export default function NewsIndexPage() {
-  const posts = getPublishedPosts();
+  const posts = getPublishedPosts().filter((post) => !isProgrammaticBody(post.slug));
   const [lead, ...rest] = posts;
 
   return (

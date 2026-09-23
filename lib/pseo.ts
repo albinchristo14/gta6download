@@ -95,6 +95,30 @@ export function itemPath(family: PseoFamily, row: PseoRow): string {
   return `/${family.routeBase}/${row.slug}`;
 }
 
+/**
+ * Reverse of `bodySlugFor`. A body exists to publish a programmatic page, so that page is
+ * its URL — left as `/news/gpu-rtx-4060` it would be a second indexable copy of `/gpu/rtx-4060`.
+ */
+export function pseoPathForSlug(slug: string): string | null {
+  const [familyId, ...rest] = slug.split("-");
+  if (rest.length === 0) return null;
+  const family = pseoFamilies.find((f) => f.id === familyId);
+  if (!family) return null;
+  const rowSlug = rest.join("-");
+  return loadRows(family).some((row) => row.slug === rowSlug)
+    ? `/${family.routeBase}/${rowSlug}`
+    : null;
+}
+
+export function isProgrammaticBody(slug: string): boolean {
+  return pseoPathForSlug(slug) !== null;
+}
+
+/** Where a published post is served from: its family page, or the article template. */
+export function postPath(slug: string): string {
+  return pseoPathForSlug(slug) ?? `/news/${slug}`;
+}
+
 /** Only rows with a published, human-reviewed body belong in the sitemap. */
 export function readyItemPaths(publishedSlugs: Set<string>): string[] {
   return pseoFamilies.flatMap((family) =>
