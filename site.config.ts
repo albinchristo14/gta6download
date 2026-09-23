@@ -2,7 +2,14 @@ export type DownloadStatus = "preorder" | "available" | "not_yet";
 
 export interface SiteConfig {
   name: string;
+  /**
+   * Absolute origin used for canonicals, `sitemap.xml`, `feed.xml`, `robots.txt` and
+   * JSON-LD. Overridden per deploy with `NEXT_PUBLIC_SITE_URL` so a preview never
+   * publishes production canonicals; no trailing slash.
+   */
   url: string;
+  /** Contact address. Deliberately not derived from `url`, which changes per deploy. */
+  supportEmail: string;
   description: string;
   author: string;
   /** ISO 8601 target launch date for the countdown. Update when Rockstar changes it. */
@@ -18,9 +25,12 @@ export interface SiteConfig {
   lastReviewed: string;
 }
 
+const originOverride = process.env.NEXT_PUBLIC_SITE_URL;
+
 export const siteConfig: SiteConfig = {
   name: "GTA6Download",
-  url: "https://gta6download.store",
+  url: originOverride ? originOverride.replace(/\/+$/, "") : "https://gta6download.store",
+  supportEmail: "hello@gta6download.store",
   description:
     "GTA 6 download status, release date, system requirements, news and where to buy — tracked against Rockstar's official announcements.",
   author: "GTA6Download Editorial",

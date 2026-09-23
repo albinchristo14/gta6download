@@ -11,7 +11,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url),
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: `GTA 6 Download Status — ${siteConfig.releaseDate.slice(0, 10)} release, pre-orders open`,
     template: "%s | GTA6Download",

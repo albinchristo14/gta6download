@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateEmail, subscribe } from "./subscribe";
+import { validateEmail, subscribe, subscribeRequest } from "./subscribe";
 
 describe("validateEmail", () => {
   it("normalizes case and whitespace", () => {
@@ -53,5 +53,51 @@ describe("subscribe", () => {
     });
     expect(thrown.status).toBe(502);
     expect(thrown.body.ok).toBe(false);
+  });
+});
+
+describe("subscribeRequest", () => {
+  const post = (body: unknown) =>
+    new Request("http://localhost/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    });
+
+  it("answers 400 when the body is not JSON", async () => {
+    const res = await subscribeRequest(post("{"), { endpoint: "https://x.test" });
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts a filled honeypot without reaching the provider", async () => {
+    let called = false;
+    const res = await subscribeRequest(post({ email: "me@example.com", website: "https://spam.test" }), {
+      endpoint: "https://x.test",
+      fetchImpl: async () => {
+        called = true;
+        return { ok: true, status: 200 };
+      },
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).ok).toBe(true);
+    expect(called).toBe(false);
+  });
+
+  it("rejects a bad address and forwards a good one, normalized", async () => {
+    const sent: unknown[] = [];
+    const fetchImpl = async (_url: string, init?: Record<string, unknown>) => {
+      sent.push(JSON.parse(String(init?.body)));
+      return { ok: true, status: 200 };
+    };
+
+    const bad = await subscribeRequest(post({ email: "nope" }), { endpoint: "https://x.test", fetchImpl });
+    expect(bad.status).toBe(400);
+
+    const good = await subscribeRequest(post({ email: "Me@Example.com", context: "faq" }), {
+      endpoint: "https://x.test",
+      fetchImpl,
+    });
+    expect(good.status).toBe(200);
+    expect(sent).toEqual([{ email: "me@example.com", context: "faq" }]);
   });
 });

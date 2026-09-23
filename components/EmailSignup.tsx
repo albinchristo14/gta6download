@@ -16,6 +16,7 @@ export function EmailSignup({
   id?: string;
 }) {
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState("");
   const [state, setState] = useState<State>("idle");
   const [message, setMessage] = useState("");
 
@@ -26,13 +27,14 @@ export function EmailSignup({
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, context }),
+        body: JSON.stringify({ email, context, website }),
       });
       const data = (await res.json()) as { ok: boolean; message?: string };
       if (res.ok && data.ok) {
         setState("success");
         setMessage(data.message ?? "You are on the list. We will email you when a download exists.");
         setEmail("");
+        setWebsite("");
       } else {
         setState("error");
         setMessage(data.message ?? "That did not work. Please check the address and try again.");
@@ -48,7 +50,17 @@ export function EmailSignup({
       <h2 className="text-lg font-semibold text-white">{title}</h2>
       <p className="mt-1.5 text-sm leading-6 text-ink-300">{description}</p>
 
-      <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row" id={id}>
+      <form onSubmit={onSubmit} className="relative mt-4 flex flex-col gap-3 sm:flex-row" id={id}>
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          className="pointer-events-none absolute -left-[9999px] -top-[9999px] h-px w-px opacity-0"
+        />
         <label htmlFor={`${id ?? "notify"}-email`} className="sr-only">
           Email address
         </label>

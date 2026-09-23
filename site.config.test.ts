@@ -1,5 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { siteConfig } from "./site.config";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.resetModules();
+});
 
 describe("siteConfig", () => {
   it("exposes the canonical site URL with no trailing slash", () => {
@@ -17,5 +22,17 @@ describe("siteConfig", () => {
   it("never claims a PC version that Rockstar has not announced", () => {
     expect(siteConfig.confirmedPlatforms).not.toContain("PC");
     expect(siteConfig.pcAnnounced).toBe(false);
+  });
+
+  it("prefers NEXT_PUBLIC_SITE_URL so a preview cannot publish production canonicals", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://preview.example/");
+    const { siteConfig: preview } = await import("./site.config");
+    expect(preview.url).toBe("https://preview.example");
+  });
+
+  it("keeps the contact address fixed when the origin changes", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://preview.example");
+    const { siteConfig: preview } = await import("./site.config");
+    expect(preview.supportEmail).toBe("hello@gta6download.store");
   });
 });

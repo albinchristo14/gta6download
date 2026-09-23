@@ -66,8 +66,57 @@ ones in every other category — keep the `/news/<slug>` URL.
   render `rel="sponsored nofollow noopener"` and each use carries an FTC disclosure.
 - **Display ads:** `components/AdSlot.tsx` renders nothing until `NEXT_PUBLIC_ADSENSE_CLIENT`
   and `NEXT_PUBLIC_ADS_ENABLED="true"` are both set, so no empty box ever ships.
-- **Email capture:** set `EMAIL_PROVIDER_ENDPOINT` to your provider's form action. Unset, the
-  API logs the address instead of forwarding it, so local runs are inert.
+- **Email capture:** set `EMAIL_PROVIDER_ENDPOINT` to your provider's form action (Pages Function
+  env, or the dev route's process env). Locally, unset, the request logs the address so dev is
+  inert; in production an unset endpoint returns `503` rather than telling people they are on a
+  list that does not exist.
+
+## Deploy (Cloudflare Pages)
+
+`output: "export"` is on, so `next build` emits a plain file tree in `out/` — 77 HTML pages,
+`404.html`, `feed.xml`, `sitemap.xml`, `robots.txt`, `_headers`, ~7 MB. `next start` no longer
+works; preview a production build with `npx wrangler pages dev out`, which also runs the Function.
+
+The only server-rendered thing was `POST /api/subscribe`, and static export drops route handlers
+(`out/api` does not exist). It now lives in `functions/api/subscribe.ts`, which wraps the same
+`subscribeRequest()` as the dev route, so the browser contract is shared rather than duplicated.
+
+1. **Connect the repo** — Pages → Create project → Git integration → `albinchristo14/gta6download`,
+   production branch `main`. Framework preset **None**, build command `npm run build`, build output
+   directory `out`. `functions/` and `public/_headers` are picked up from the repo automatically.
+2. **Set the environment variables** in Pages settings (all `NEXT_PUBLIC_*` are inlined at build
+   time, so they belong in the build environment, not at request time):
+
+   | Variable | Purpose |
+   | --- | --- |
+   | `NEXT_PUBLIC_SITE_URL` | Canonical origin for canonicals, `sitemap.xml`, `robots.txt`, `feed.xml`, JSON-LD. Defaults to `https://gta6download.store`; set it on every preview deploy. |
+   | `NEXT_PUBLIC_GSC_VERIFICATION` | Search Console ownership meta |
+   | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_CLARITY_ID` | Analytics |
+   | `NEXT_PUBLIC_ADS_ENABLED`, `NEXT_PUBLIC_ADSENSE_CLIENT` | Ad slots, off until both are set |
+   | `EMAIL_PROVIDER_ENDPOINT` | Secret. Where signups are forwarded — the Function returns 503 without it |
+
+   Never set `ANTHROPIC_API_KEY` on the host; `npm run ingest` is a local or scheduled-CI job.
+3. **Add the domain** in Pages → Custom domains. Cloudflare issues the certificate and flattens the
+   apex record. Set `NEXT_PUBLIC_SITE_URL` to the exact origin you want canonicalised.
+4. **Check it** after the first deploy:
+   ```bash
+   curl -sI https://gta6download.store/gpu/rtx-4060 | grep -i cache-control
+   curl -s  https://gta6download.store/sitemap.xml | grep -c "<loc>"   # 77
+   curl -sI https://gta6download.store/nope | head -1                   # 404, styled 404.html
+   curl -s  https://gta6download.store/opengraph-image | file -         # social card still renders
+   curl -s -X POST https://gta6download.store/api/subscribe \
+        -H 'content-type: application/json' -d '{"email":"you@example.com"}'
+   ```
+5. **Deploying is committing.** Every content change is an MDX/JSON edit, so a push to `main`
+   rebuilds and publishes; `prebuild` runs `scripts/validate-content.ts`, which fails the build on
+   a duplicate slug, an over-long title, a missing source or a broken internal link. Roll back from
+   the Pages deployment list. If you prefer Actions over Pages Git integration, `.github/workflows/
+   deploy.yml` builds and publishes with `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` — use one
+   trigger or the other, not both.
+
+A VPS still works with no changes beyond `npm ci && npm run build`, serving `out/` from nginx
+instead of `next start`, plus your own rate limit on `/api/subscribe`.
+
 
 ## Out of scope
 

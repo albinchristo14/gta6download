@@ -32,7 +32,7 @@ export default function ContactPage() {
         <Prose>
           <p>
             <a
-              href={`mailto:hello@${siteConfig.url.replace("https://", "")}`}
+              href={`mailto:${siteConfig.supportEmail}`}
               className="font-semibold text-brand-700 underline underline-offset-2"
             >
               hello@gta6download.store

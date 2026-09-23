@@ -5,6 +5,9 @@ import { categoryMeta } from "@/lib/taxonomy";
 
 const CONTROL_CHARS = new RegExp("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]", "g");
 
+/** Route handlers are dynamic unless declared otherwise; the feed is fixed at build time. */
+export const dynamic = "force-static";
+
 function escapeXml(input: string): string {
   const escaped = input
     .replace(/&/g, "&amp;")

@@ -67,3 +67,39 @@ export async function subscribe(
     return { status: 502, body: { ok: false, message: "The signup service is unreachable. Try again shortly." } };
   }
 }
+
+/** A bot that filled the honeypot is told it succeeded, so it never learns it was blocked. */
+const HONEYPOT_ACCEPT = { ok: true, message: "You are on the list." };
+
+function json(body: { ok: boolean; message: string }, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+/**
+ * The whole `/api/subscribe` contract in one place: JSON parsing, the honeypot,
+ * validation and the provider call. The Next route handler (local dev) and the
+ * Cloudflare Pages Function (production) are both thin wrappers over this, so the
+ * shape the browser depends on cannot drift between the two runtimes.
+ */
+export async function subscribeRequest(
+  request: Request,
+  opts: { endpoint?: string; fetchImpl?: FetchLike } = {},
+): Promise<Response> {
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ ok: false, message: "Expected a JSON body." }, 400);
+  }
+
+  const body = (payload ?? {}) as { email?: unknown; context?: unknown; website?: unknown };
+  if (typeof body.website === "string" && body.website.length > 0) {
+    return json(HONEYPOT_ACCEPT, 200);
+  }
+
+  const result = await subscribe(body, { endpoint: opts.endpoint, context: body.context, fetchImpl: opts.fetchImpl });
+  return json(result.body, result.status);
+}

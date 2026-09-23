@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { siteConfig } from "@/site.config";
 
+export const dynamic = "force-static";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = `${siteConfig.name} — GTA 6 download status, release date and where to buy`;

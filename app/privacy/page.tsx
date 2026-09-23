@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             correction, deletion, a portability export, or restriction of processing; under the CCPA/CPRA
             California residents can request disclosure, deletion and opt-out of sale — we do not sell
             personal information, so there is nothing to opt out of. Email{" "}
-            <a href={`mailto:hello@${siteConfig.url.replace("https://", "")}`} className="font-semibold text-brand-700 underline underline-offset-2">
+            <a href={`mailto:${siteConfig.supportEmail}`} className="font-semibold text-brand-700 underline underline-offset-2">
               hello@gta6download.store
             </a>{" "}
             to make a request; we will not ask for more identity than we need to be sure it is your data.

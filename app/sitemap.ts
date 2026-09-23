@@ -30,6 +30,8 @@ function url(path: string) {
   return `${siteConfig.url}${path}`;
 }
 
+export const dynamic = "force-static";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const reviewed = siteConfig.lastReviewed;
 
