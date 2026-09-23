@@ -1,0 +1,38 @@
+---
+title: "RX 7800 XT Has 16 GB, the Same as the Consoles — So What?"
+slug: "gpu-rx-7800-xt"
+description: "AMD's RX 7800 XT carries 16 GB, matching PS5 and Xbox Series X memory. The coincidence looks decisive and is much weaker than it appears."
+date: "2026-09-23"
+updated: "2026-09-23"
+tags: ["gta-6", "rx-7800-xt", "gpu", "vram", "requirements"]
+category: "requirements"
+sources:
+  [
+    "https://www.rockstargames.com/VI/",
+    "https://www.amd.com/en/products",
+    "https://www.playstation.com/en-us/ps5/"
+  ]
+status: "published"
+author: "GTA6Download Editorial"
+---
+
+## The same number, doing different jobs
+
+Sixteen, written down twice, reads like a match. A 2023 Radeon RX 7800 XT is a high-tier AMD card with 16 GB of video memory, and both current-generation consoles that will actually run GTA 6 on 19 November 2026 also carry 16 GB. Pages elsewhere stop there and conclude that this card sits exactly where the consoles sit. That conclusion skips the part of the sentence that matters.
+
+| Where the 16 GB lives | What it holds at once |
+| --- | --- |
+| PS5 / Xbox Series X | Game data, system software, and frame buffers in one shared pool |
+| RX 7800 XT | Textures and buffers only; system and game code sit in separate RAM |
+
+## Unified pools and discrete frames are not interchangeable
+
+Console memory is a single pool the whole system draws from, which is why a fixed 16 GB is both generous and genuinely contested — the operating system is competing with the game inside the same budget. A graphics card's 16 GB is dedicated to graphics work and assumes a separate pool of system memory behind it. A requirement expressed as a number cannot be compared across those two designs without knowing how the number was derived, and no such number exists. Rockstar has published no system requirements for any platform, because there is no PC version for requirements to describe.
+
+## Why the coincidence is less useful than it feels
+
+There is a second, quieter flaw in the matching-numbers argument. A console's memory layout is chosen around hardware that will never change, so a studio can hand-partition it. A PC has to accommodate arbitrary combinations, and ports typically carry overhead a console build does not need. Same figure, different amount of headroom underneath it. None of that tells you this card falls short or clears a bar; without an announced build there is no bar, which is also why anything advertising a GTA 6 download for your PC is describing a file that cannot exist — in practice that link hands over somebody else's program wearing the game's name.
+
+## What to check instead of pattern-matching the spec sheet
+
+Capacity is a precondition, never a verdict, and the sensible next step is to stop reasoning from console numbers entirely. The [system requirements page](/gta-6-system-requirements) explains what Rockstar has and has not committed to paper, and when something testable does land, the [can-I-run checker](/tools/can-i-run-gta-6) lets you put your whole machine against it rather than one number against one number.

@@ -1,0 +1,39 @@
+---
+title: "GTX 1660 Super and GTA 6: Why 6 GB Is the Entire Question"
+slug: "gpu-gtx-1660-super"
+description: "A 2019 card with 6 GB is the weakest case we cover. Here is what a memory ceiling does to a modern open world, and what it does not decide."
+date: "2026-09-23"
+updated: "2026-09-23"
+tags: ["gta-6", "gpu", "gtx-1660-super", "nvidia", "vram"]
+category: "requirements"
+sources: ["https://www.techpowerup.com/gpu-specs/", "https://www.nvidia.com/en-us/geforce/graphics-cards/", "https://www.xbox.com/en-US/consoles"]
+status: "published"
+author: "GTA6Download Editorial"
+---
+
+## Six gigabytes is the subject of this page
+
+Everything else about the GTX 1660 Super is secondary. Our data describes it as a 6 GB card in the entry tier, released in 2019 — the oldest graphics card we cover, and the only one here with less than 8 GB. Against a game that has not been announced for PC, throughput arguments are guesswork, but capacity is arithmetic: a dense city has to fit its visible world into whatever memory the graphics card owns, and 6 GB is less than any current console leaves a game to work in.
+
+## Where a ceiling like this shows up first
+
+Memory exhaustion rarely announces itself. It changes what the game keeps resident before it changes anything measurable.
+
+| What the pool is holding | What gives way when it fills |
+| --- | --- |
+| Texture sets for nearby surfaces | Blurred or lower-resolution surfaces, textures reloading as you look at them |
+| The working set of streamed scenery | Pop-in closes to the camera, longer pauses after fast travel or a hard corner |
+| Render targets and frame buffers | Resolution and anti-aliasing modes drop before textures do |
+| Scratch space for shadows and effects | Effects resolve at lower fidelity, or get re-rendered repeatedly |
+
+Texture quality is the first casualty because it is the largest single consumer and the easiest for an engine to trim. That ordering is not specific to GTA 6; it is how streamed open worlds behave generally, and it is why a 6 GB card is a poorer fit for a 2026-scale city than a slower card with 8 GB would be.
+
+## The consoles make the gap look smaller than it is
+
+Xbox Series S ships 10 GB of GDDR6 with 8 GB usable for games, which is the tightest memory budget Rockstar is designing around. Even that floor sits above this card, and the console arrangements differ as well: a game on Series S shares a much larger pool with the system software, while a PC game's textures compete with the desktop for a separate 6 GB.
+
+There is no PC version of GTA 6, no announced one, and no published specification for it from Rockstar, so this page cannot end in a verdict — only in a shape of a problem. Any download advertised for it today is a fabrication, and the 6 GB card is the least of what such a file would cost you; read the [no-official-specs report](/news/gta-6-system-requirements-no-official-pc-specs) for how that came about.
+
+## If you own this card
+
+Judge it against games that exist. For the hypothetical, put your parts into [Can I run GTA 6](/tools/can-i-run-gta-6) and let the projection carry its own label rather than borrowing confidence from a page like this one.

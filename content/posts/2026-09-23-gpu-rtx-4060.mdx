@@ -1,0 +1,32 @@
+---
+title: "RTX 4060 8GB and GTA 6: Why Console 16 GB Is Not Twice 8 GB"
+slug: "gpu-rtx-4060"
+description: "The RTX 4060 pairs modern architecture with 8 GB. Comparing that to a console's 16 GB of unified memory looks obvious and is not."
+date: "2026-09-23"
+updated: "2026-09-23"
+tags: ["gta-6", "gpu", "rtx-4060", "nvidia", "vram", "unified-memory"]
+category: "requirements"
+sources: ["https://www.playstation.com/en-us/ps5/", "https://www.nvidia.com/en-us/geforce/graphics-cards/", "https://www.techpowerup.com/gpu-specs/", "https://www.rockstargames.com/VI/"]
+status: "published"
+author: "GTA6Download Editorial"
+---
+
+## The pairing that makes people argue
+
+Our data lists the RTX 4060 as an 8 GB mainstream card from 2023. That capacity is the same figure NVIDIA put on a card three years earlier, and it is why this pairing generates more debate than any other in the range: buyers are being asked to accept console-generation silicon with half the memory the consoles carry, and they want to know whether that is a problem. This page cannot answer that for GTA 6, and it is worth being exact about why not.
+
+## Two pools, two different jobs
+
+| | PS5 / Xbox Series X | RTX 4060 in a PC |
+| --- | --- | --- |
+| Memory present | 16 GB GDDR6, one pool | 8 GB GDDR6, graphics only |
+| Who draws from it | game, operating system, system software, capture, audio | the game, plus the Windows desktop and anything else using the GPU |
+| Where the rest lives | nowhere else; the pool is the machine | system RAM, over the motherboard, at its own speed |
+
+A console's headline figure therefore is not a target for a graphics card to hit. Half of that 16 GB is doing work a PC graphics card never holds — the operating system, the shell, background services — and the game itself is authored around one fixed allocation the developers can audit exactly. The PC card's 8 GB sits inside a machine with its own memory bank that the game can also reach, but only across a slower path and with less predictable results. Reading 16 and 8 as a ratio is the mistake; the pools are shaped differently.
+
+## What the tension is really about
+
+Extra memory buys headroom for larger texture sets, bigger resident chunks of a streamed world, and frame buffers that grow with rendering resolution and colour depth. It buys none of the speed needed to use them, which is why capacity debates keep drifting into throughput they cannot resolve. Nothing here is a claim about GTA 6 specifically: no PC version has been announced by Rockstar, and no system requirements exist for it on any platform, so there is no budget to check this card against. Files being handed out as GTA 6 downloads today are not the game — [the PC download status page](/news/gta-6-pc-download-status) covers what is actually circulating.
+
+If you want this card's position rather than a general essay, [Can I run GTA 6](/tools/can-i-run-gta-6) grades your exact combination against a stated projection, and the [system requirements page](/gta-6-system-requirements) carries the reasoning that projection rests on.

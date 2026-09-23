@@ -1,0 +1,37 @@
+---
+title: "Core i5-8400 and GTA 6: Six Threads Is the Whole Story"
+slug: "cpu-core-i5-8400"
+description: "Intel's 2017 six-core CPU has no hyper-threading, which makes thread count the honest subject of this page — not speed, not age, not tier."
+date: "2026-09-23"
+updated: "2026-09-23"
+tags: ["gta-6", "cpu", "core-i5-8400", "intel", "requirements"]
+category: "requirements"
+sources: ["https://www.techpowerup.com/cpu-specs/", "https://www.tomshardware.com", "https://www.xbox.com/en-US/consoles"]
+status: "published"
+author: "GTA6Download Editorial"
+---
+
+## A spec line with a hole in the middle
+
+Core count is what the box advertised in 2017, and it is the wrong half of this processor's story. The Core i5-8400 has six cores and six threads: one thread per core, no simultaneous multi-threading, no spare capacity for a second stream of work to hide behind the first. Intel put it in the low tier, and the placement was fair at the time. It is the missing threads, not the clock speed, that make this an interesting case.
+
+## What a busy world asks of a scheduling slot
+
+A city that keeps arriving at the camera does not need one processor to do everything at once, but it does need several things to be happening at the same moment. Roughly speaking, this is the queue.
+
+| Recurring work in an open world | What it wants from a CPU |
+| --- | --- |
+| Simulation: traffic, pedestrians, missions, physics | Time on a core that cannot be borrowed |
+| Streaming: pulling world data in from storage | A slot that keeps looking ahead of the player |
+| Draw preparation for the graphics card | Something close to prompt, so the GPU is not waiting |
+| Audio, input, the operating system and its background tasks | Small, relentless, and unwilling to queue politely |
+
+Six threads means six places to put all of that, and eight cores is what every console of this generation settled on: Zen 2 in all three machines, with RDNA 2 graphics and 16 GB of unified GDDR6 behind them. Which is why the comparison here is about available slots at least as much as about speed, and this is a chip with fewer slots.
+
+## A dead end rather than a slow road
+
+Coffee Lake sits on a socket whose later generations added cores and threads. That matters for a reader weighing a replacement instead of a repair: with this part, the upgrade is not a drop-in, it is a platform change, and it drags the memory generation with it. Plenty of machines built in 2018 are still exactly as capable as the day they were assembled, which is precisely the problem — nothing about them has improved in place.
+
+## The bar nobody has drawn
+
+There is no PC release of GTA 6 and no announcement that one is planned, so no requirement exists that six threads would clear or fail. Rockstar has published specifications for nothing. A site offering you a copy of the game today is not early; it is fake, and the usual result of that click is an infected machine. For the conditional version of this argument, [the FPS estimator](/tools/fps-estimator) pairs a processor with the card beside it and shows its reasoning, and [the requirements hub](/requirements) is where the sibling pages say the same thing about the parts surrounding this one.
