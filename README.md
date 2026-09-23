@@ -45,14 +45,15 @@ npm run build     # prebuild = tsx scripts/validate-content.ts
 | `/gta-6-download-pc`, `/gta-6-apk-download`, … (13) | `lib/download-pages.ts` |
 | `/gpu/[card]`, `/cpu/[chip]`, `/errors/[error]` | `data/*.json` + a matching published post |
 | `/tools/fps-estimator`, `/tools/can-i-run-gta-6` | `lib/fps.ts` projections, clearly labelled as estimates |
-| `/feed.xml`, `/sitemap.xml`, `/robots.txt`, `/opengraph-image` | route handlers |
+| `/feed.xml`, `/sitemap.xml`, `/robots.txt`, `/opengraph-image.png` | route handlers |
 
 ### Programmatic pages are gated on a human
 
 A `/gpu/…`, `/cpu/…` or `/errors/…` URL exists as soon as its data row exists, but it is
 `noindex` and absent from the sitemap until a published post with slug
 `<family>-<row-slug>` (e.g. `gpu-rtx-4060`) sits in `content/posts/`. That is why the generator
-can scale to hundreds of rows while the index stays small: 84 pages build, 77 are listed.
+can scale to hundreds of rows while the index stays small: all 34 rows currently have a reviewed
+body, so 34 of the 76 listed URLs are programmatic; a row without one still builds, unindexed.
 `npm run ingest` drafts those bodies, but they stay in `content/drafts/` until reviewed.
 
 A body published this way is only ever the second half of its programmatic page: `postPath()` in
@@ -73,7 +74,7 @@ ones in every other category — keep the `/news/<slug>` URL.
 
 ## Deploy (Cloudflare Pages)
 
-`output: "export"` is on, so `next build` emits a plain file tree in `out/` — 77 HTML pages,
+`output: "export"` is on, so `next build` emits a plain file tree in `out/` — 76 HTML pages plus
 `404.html`, `feed.xml`, `sitemap.xml`, `robots.txt`, `_headers`, ~7 MB. `next start` no longer
 works; preview a production build with `npx wrangler pages dev out`, which also runs the Function.
 
@@ -101,18 +102,20 @@ The only server-rendered thing was `POST /api/subscribe`, and static export drop
 4. **Check it** after the first deploy:
    ```bash
    curl -sI https://gta6download.store/gpu/rtx-4060 | grep -i cache-control
-   curl -s  https://gta6download.store/sitemap.xml | grep -c "<loc>"   # 77
+   curl -s  https://gta6download.store/sitemap.xml | grep -c "<loc>"   # 76, and no repeats
    curl -sI https://gta6download.store/nope | head -1                   # 404, styled 404.html
-   curl -s  https://gta6download.store/opengraph-image | file -         # social card still renders
+   curl -sI https://gta6download.store/opengraph-image.png | grep -i content-type   # image/png
    curl -s -X POST https://gta6download.store/api/subscribe \
         -H 'content-type: application/json' -d '{"email":"you@example.com"}'
    ```
+   The last one answers `503` until `EMAIL_PROVIDER_ENDPOINT` is set — that is the Function being
+   honest, not a broken deploy.
 5. **Deploying is committing.** Every content change is an MDX/JSON edit, so a push to `main`
    rebuilds and publishes; `prebuild` runs `scripts/validate-content.ts`, which fails the build on
    a duplicate slug, an over-long title, a missing source or a broken internal link. Roll back from
-   the Pages deployment list. If you prefer Actions over Pages Git integration, `.github/workflows/
-   deploy.yml` builds and publishes with `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` — use one
-   trigger or the other, not both.
+   the Pages deployment list. `.github/workflows/ci.yml` typechecks, tests and builds on every push
+   and PR but publishes nothing — with Git integration wired up, a second deployer would just race
+   it. To publish by hand instead: `npx wrangler pages deploy out`.
 
 A VPS still works with no changes beyond `npm ci && npm run build`, serving `out/` from nginx
 instead of `next start`, plus your own rate limit on `/api/subscribe`.

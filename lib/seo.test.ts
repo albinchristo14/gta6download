@@ -61,7 +61,15 @@ describe("pageMetadata", () => {
   it("sets a canonical absolute URL", () => {
     const md = pageMetadata({ title: "X", description: "Y", path: "/faq" });
     expect(md.alternates?.canonical).toBe("https://gta6download.store/faq");
-    expect(md.openGraph?.images).toBeTruthy();
+    // The .png extension is what makes a static host serve the card as image/png.
+    expect(md.openGraph?.images).toEqual([
+      {
+        url: "https://gta6download.store/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: expect.any(String),
+      },
+    ]);
   });
 
   it("noindexes thin placeholder pages but still lets crawlers follow out", () => {

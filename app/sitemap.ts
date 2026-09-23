@@ -13,7 +13,6 @@ import { isProgrammaticBody, readyItemPaths } from "@/lib/pseo";
 const STATIC_PATHS = [
   "",
   "/gta-6-download",
-  "/news",
   "/where-to-buy",
   "/gta-6-release-date",
   "/gta-6-system-requirements",

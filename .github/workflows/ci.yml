@@ -1,4 +1,7 @@
-name: build-and-deploy
+name: ci
+
+# Pages Git integration publishes this repo, so CI validates and builds only — it never deploys.
+# Handing a deploy to Actions as well would make two triggers publish the same project.
 
 on:
   push:
@@ -20,7 +23,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      # The content guard runs as `prebuild`, so an invalid post fails the deploy here.
+      # The content guard runs as `prebuild`, so an invalid post fails the build here.
       - name: Build static export
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
@@ -34,22 +37,3 @@ jobs:
         with:
           name: static-site
           path: out
-
-  deploy:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      # Checked out so wrangler can find ./functions alongside the exported site.
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: static-site
-          path: out
-      - name: Publish to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=gta6download

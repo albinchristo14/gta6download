@@ -6,6 +6,16 @@ export function absoluteUrl(path = "/"): string {
   return new URL(path, siteConfig.url).toString();
 }
 
+/** The card is rendered by `app/opengraph-image.png/route.ts`. The `.png` is not decoration:
+ *  a static host derives Content-Type from the extension, and og:image crawlers check that header. */
+export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
+export const OG_IMAGE_ALT = `${siteConfig.name} — GTA 6 download status, release date and where to buy`;
+export const ogImage = {
+  url: absoluteUrl("/opengraph-image.png"),
+  ...OG_IMAGE_SIZE,
+  alt: OG_IMAGE_ALT,
+};
+
 export interface PageMetadataOptions {
   title: string;
   description: string;
@@ -35,13 +45,13 @@ export function pageMetadata({
       title,
       description,
       siteName: siteConfig.name,
-      images: [{ url: absoluteUrl("/opengraph-image"), width: 1200, height: 630 }],
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [absoluteUrl("/opengraph-image")],
+      images: [ogImage],
     },
     // Unindexed placeholders still hand crawlers through to the real pages they link to.
     ...(index ? {} : { robots: { index: false, follow: true } }),

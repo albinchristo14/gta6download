@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { siteConfig } from "@/site.config";
-import { organizationJsonLd, absoluteUrl } from "@/lib/seo";
+import { organizationJsonLd, absoluteUrl, ogImage } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -31,8 +31,14 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: "GTA 6 Download Hub — status, release date, where to buy",
     description: siteConfig.description,
+    images: [ogImage],
   },
-  twitter: { card: "summary_large_image", title: "GTA 6 Download Hub", description: siteConfig.description },
+  twitter: {
+    card: "summary_large_image",
+    title: "GTA 6 Download Hub",
+    description: siteConfig.description,
+    images: [ogImage],
+  },
   robots: { index: true, follow: true },
   ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
     ? { verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION } }
