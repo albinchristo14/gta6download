@@ -252,7 +252,7 @@ export const downloadPages: DownloadPage[] = [
     ],
     warning:
       "There is a repeatable shape to these operations: a storefront claims a Rockstar partnership, takes payment for 'early access' that cannot exist, moves to a new domain when called out, and has no refund process. If you have already paid, cancel the card rather than waiting on that merchant.",
-    relatedSlug: "how-to-avoid-gta-6-download-scams",
+    relatedSlug: "gta-6-apk",
   },
 ];
 
