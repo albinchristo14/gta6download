@@ -1,9 +1,16 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { adSlotFor } from "@/lib/ads";
+
 /**
- * Display-ad container. Inert by default: renders nothing until an AdSense client id and
- * NEXT_PUBLIC_ADS_ENABLED="true" are set, so no placeholder ever reaches a live page.
+ * Display-ad container. Inert unless ads are enabled, a client id is present, and the
+ * placement has a real numeric unit id in NEXT_PUBLIC_ADSENSE_SLOTS — a placement name
+ * is not an AdSense slot id.
  */
 const ADS_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
 const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === "true";
+const ADS_SLOTS = process.env.NEXT_PUBLIC_ADSENSE_SLOTS;
 
 export function AdSlot({
   id,
@@ -14,20 +21,36 @@ export function AdSlot({
   className?: string;
   minHeight?: number;
 }) {
-  if (!ADS_ENABLED || !ADS_CLIENT) return null;
+  const slot = adSlotFor(id, ADS_SLOTS);
+  const enabled = ADS_ENABLED && Boolean(ADS_CLIENT) && Boolean(slot);
+  const insRef = useRef<HTMLModElement | null>(null);
+  const pushedRef = useRef(false);
+
+  useEffect(() => {
+    const ins = insRef.current;
+    if (!enabled || !ins || pushedRef.current) return;
+    if (ins.getAttribute("data-adsbygoogle-status") === "done") return;
+
+    pushedRef.current = true;
+    const w = window as typeof window & { adsbygoogle?: unknown[] };
+    w.adsbygoogle = w.adsbygoogle || [];
+    w.adsbygoogle.push({});
+  }, [enabled, slot]);
+
+  if (!enabled) return null;
 
   return (
     <aside
       aria-label="Advertisement"
-      data-ad-slot={id}
-      className={`mx-auto my-8 flex items-center justify-center rounded-lg border border-dashed border-ink-200 bg-ink-100 text-xs text-ink-400 ${className}`}
+      className={`mx-auto my-8 flex items-center justify-center ${className}`}
       style={{ minHeight }}
     >
       <ins
+        ref={insRef}
         className="adsbygoogle"
-        style={{ display: "block" }}
+        style={{ display: "block", width: "100%" }}
         data-ad-client={ADS_CLIENT}
-        data-ad-slot={id}
+        data-ad-slot={slot}
         data-ad-format="auto"
         data-full-width-responsive="true"
       />

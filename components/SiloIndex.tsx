@@ -65,7 +65,7 @@ export function SiloIndex({ category }: { category: Category }) {
       </div>
 
       <div className="container-page py-12">
-        <AdSlot id={`silo-${category}-top`} />
+        <AdSlot id="silo-top" />
 
         {posts.length === 0 ? (
           <div className="card max-w-2xl p-6">

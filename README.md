@@ -53,7 +53,7 @@ A `/gpu/…`, `/cpu/…` or `/errors/…` URL exists as soon as its data row exi
 `noindex` and absent from the sitemap until a published post with slug
 `<family>-<row-slug>` (e.g. `gpu-rtx-4060`) sits in `content/posts/`. That is why the generator
 can scale to hundreds of rows while the index stays small: all 34 rows currently have a reviewed
-body, so 34 of the 76 listed URLs are programmatic; a row without one still builds, unindexed.
+body, so 34 of the 80 listed URLs are programmatic; a row without one still builds, unindexed.
 `npm run ingest` drafts those bodies, but they stay in `content/drafts/` until reviewed.
 
 A body published this way is only ever the second half of its programmatic page: `postPath()` in
@@ -65,8 +65,11 @@ ones in every other category — keep the `/news/<slug>` URL.
 
 - **Affiliate links:** edit `affiliates.config.ts` — one file updates every Buy button. Links
   render `rel="sponsored nofollow noopener"` and each use carries an FTC disclosure.
-- **Display ads:** `components/AdSlot.tsx` renders nothing until `NEXT_PUBLIC_ADSENSE_CLIENT`
-  and `NEXT_PUBLIC_ADS_ENABLED="true"` are both set, so no empty box ever ships.
+- **Display ads:** `components/AdSlot.tsx` and the AdSense loader in `app/layout.tsx` stay off
+  until `NEXT_PUBLIC_ADS_ENABLED="true"` and `NEXT_PUBLIC_ADSENSE_CLIENT` are both set.
+  `NEXT_PUBLIC_ADSENSE_SLOTS` is a JSON map from placement name (`article-top`, `download-mid`, …)
+  to the numeric AdSense unit id; a placement with no entry renders nothing, so a page never
+  sends a label like `article-top` to Google as a slot id.
 - **Email capture:** signups are added to a Resend audience. Set `RESEND_API_KEY` and
   `RESEND_AUDIENCE_ID` (Pages Function env, or the dev route's process env); a repeat address is
   re-used rather than duplicated. Locally, unset, the request logs the address so dev is
@@ -75,7 +78,7 @@ ones in every other category — keep the `/news/<slug>` URL.
 
 ## Deploy (Cloudflare Pages)
 
-`output: "export"` is on, so `next build` emits a plain file tree in `out/` — 76 HTML pages plus
+`output: "export"` is on, so `next build` emits a plain file tree in `out/` — 80 HTML pages plus
 `404.html`, `feed.xml`, `sitemap.xml`, `robots.txt`, `_headers`, ~7 MB. `next start` no longer
 works; preview a production build with `npx wrangler pages dev out`, which also runs the Function.
 
@@ -94,7 +97,7 @@ The only server-rendered thing was `POST /api/subscribe`, and static export drop
    | `NEXT_PUBLIC_SITE_URL` | Canonical origin for canonicals, `sitemap.xml`, `robots.txt`, `feed.xml`, JSON-LD. Defaults to `https://gta6download.store`; set it on every preview deploy. |
    | `NEXT_PUBLIC_GSC_VERIFICATION` | Search Console ownership meta |
    | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_CLARITY_ID` | Analytics |
-   | `NEXT_PUBLIC_ADS_ENABLED`, `NEXT_PUBLIC_ADSENSE_CLIENT` | Ad slots, off until both are set |
+   | `NEXT_PUBLIC_ADS_ENABLED`, `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_ADSENSE_SLOTS` | Ad loader and units; slots is a JSON map of placement → numeric unit id |
    | `RESEND_API_KEY`, `RESEND_AUDIENCE_ID` | Secrets, Function runtime only. Signups become Resend contacts in that audience; the Function returns 503 without both |
 
    Never set `ANTHROPIC_API_KEY` on the host; `npm run ingest` is a local or scheduled-CI job.
@@ -103,7 +106,7 @@ The only server-rendered thing was `POST /api/subscribe`, and static export drop
 4. **Check it** after the first deploy:
    ```bash
    curl -sI https://gta6download.store/gpu/rtx-4060 | grep -i cache-control
-   curl -s  https://gta6download.store/sitemap.xml | grep -c "<loc>"   # 76, and no repeats
+   curl -s  https://gta6download.store/sitemap.xml | grep -c "<loc>"   # 80, and no repeats
    curl -sI https://gta6download.store/nope | head -1                   # 404, styled 404.html
    curl -sI https://gta6download.store/opengraph-image.png | grep -i content-type   # image/png
    curl -s -X POST https://gta6download.store/api/subscribe \
