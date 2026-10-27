@@ -15,13 +15,13 @@ export const categories: CategoryMeta[] = [
     id: "downloads",
     label: "Downloads",
     path: "/downloads",
-    blurb: "What is actually downloadable, from where, and what is still just a pre-order.",
+    blurb: "GTA 6 download and pre-load information for PS5 and Xbox, plus the latest on PC availability.",
   },
   {
     id: "installation",
     label: "Installation",
     path: "/installation",
-    blurb: "Preloading, install sizes and launcher setup on console and, if it ever comes, PC.",
+    blurb: "How to prepare for GTA 6 pre-load and installation on PS5 and Xbox, and what is known about PC.",
   },
   {
     id: "requirements",

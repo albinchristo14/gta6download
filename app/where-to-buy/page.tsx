@@ -9,9 +9,9 @@ import { AffiliateDisclosure } from "@/components/AffiliateDisclosure";
 import { AdSlot } from "@/components/AdSlot";
 
 export const metadata = pageMetadata({
-  title: "Where to Buy GTA 6 — Every Official Store, Compared",
+  title: "Where to Buy GTA 6 for PS5 and Xbox | PC Availability",
   description:
-    "GTA 6 pre-orders are live on the Rockstar Store, PlayStation Store, Xbox Store, GameStop, Best Buy and Amazon from $79.99. Compare editions, bonuses and platform exclusives.",
+    "Find GTA 6 pre-order options for PS5 and Xbox Series X|S, compare editions and learn why there is no announced PC version to buy yet.",
   path: "/where-to-buy",
   keywords: ["where to buy gta 6", "gta 6 pre order", "gta 6 price", "gta 6 editions"],
 });
@@ -20,7 +20,7 @@ const EDITIONS = [
   {
     name: "Standard Edition",
     price: "$79.99",
-    includes: "The game. No launch bonus content is listed for this tier on Rockstar's editions page.",
+    includes: "The game. Qualifying purchases before 20 November include the Vintage Vice City Pack; see Rockstar for terms.",
     availability: "All official storefronts",
   },
   {
@@ -38,7 +38,7 @@ const EDITIONS = [
   {
     name: "Early access",
     price: "Does not exist",
-    includes: "Neither published tier buys an earlier start. Pre-load is reported to open 12 November 2026 for pre-orders.",
+    includes: "Neither published tier buys an earlier start. Pre-load begins 12 November 2026 at local midnight, according to Rockstar.",
     availability: "No such product",
   },
 ];
@@ -59,13 +59,13 @@ export default function WhereToBuyPage() {
       <PageHeader
         crumbs={crumb}
         eyebrow="Buying guide · September 2026"
-        title="Where to buy GTA 6 — six legitimate stores, and everywhere else is not"
+        title="Where to buy GTA 6 for PS5 and Xbox"
         description="GTA 6 releases 19 November 2026 on PS5 and Xbox Series X|S. Pre-orders are open now, from $79.99. There is no PC version to buy, so no PC store page can be real."
       />
 
       <Section
-        title="Official stores with a real GTA 6 listing"
-        description="Affiliate links: if you buy through them we earn a commission at no cost to you. We only ever list storefronts that can actually deliver the game."
+        title="GTA 6 purchase options"
+        description="Affiliate links: if you buy through them we earn a commission at no cost to you. Check each retailer’s current listing, region and platform before ordering."
       >
         <AffiliateDisclosure />
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -83,6 +83,18 @@ export default function WhereToBuyPage() {
             </div>
           ))}
         </div>
+      </Section>
+
+      <Section title="Can you buy GTA 6 for PC?">
+        <p className="max-w-3xl leading-7 text-ink-800">
+          Rockstar has announced GTA 6 for PlayStation 5 and Xbox Series X|S, but has not announced
+          a PC version. There is no confirmed PC release or official PC pre-order to buy. Avoid sites
+          offering PC keys or installers and check{" "}
+          <a href="https://support.rockstargames.com/articles/4QfG4FmZCf5W1gS8jy4UVT/grand-theft-auto-vi-platform-editions-and-versions-Platforms" className="font-semibold text-brand-700 underline underline-offset-2">
+            Rockstar’s platform and edition FAQ
+          </a>{" "}
+          for the latest information.
+        </p>
       </Section>
 
       <AdSlot id="buy-after-stores" />
@@ -135,7 +147,7 @@ export default function WhereToBuyPage() {
             run it, and a licence does not transfer between families.
           </li>
           <li>
-            Pick for the bonus, not the sticker price: retailer in-game extras differ, and the{" "}
+            Pick for the bonus, not the sticker price: check the current store listing for bonuses and terms, and the{" "}
             <Link href="/news/where-to-buy-gta-6-legitimately" className="font-semibold text-brand-700 underline underline-offset-2">
               edition-by-edition breakdown
             </Link>{" "}
@@ -157,8 +169,7 @@ export default function WhereToBuyPage() {
           <div className="rounded-xl border border-ink-200 bg-ink-50 p-6">
             <h2 className="text-lg font-bold text-ink-950">Still deciding?</h2>
             <p className="mt-2 text-sm leading-6 text-ink-600">
-              {siteConfig.statusHeadline} Prices are fixed at launch, so there is no advantage to
-              buying from an unrecognised third party — only risk.
+              {siteConfig.statusHeadline} Check the final price, platform and seller before buying; prices and availability can vary by region.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link href="/gta-6-download" className="btn-secondary">

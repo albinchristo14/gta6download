@@ -12,7 +12,7 @@ import { siteConfig } from "@/site.config";
 export function siloMetadata(category: Category) {
   const meta = categoryMeta(category);
   return pageMetadata({
-    title: `${meta.label} — GTA 6`,
+    title: category === "downloads" ? "GTA 6 Download: PS5, Xbox and PC Availability" : category === "installation" ? "How to Install GTA 6: Pre-load and Platform Guide" : `${meta.label} — GTA 6`,
     description: meta.blurb,
     path: meta.path,
     keywords: [meta.label.toLowerCase(), "gta 6"],
@@ -65,6 +65,18 @@ export function SiloIndex({ category }: { category: Category }) {
       </div>
 
       <div className="container-page py-12">
+        {(category === "downloads" || category === "installation") && (
+          <section className="mb-10 max-w-3xl rounded-xl border border-ink-200 bg-white p-6">
+            <h2 className="text-xl font-bold text-ink-950">GTA 6 download and pre-load status</h2>
+            <p className="mt-3 leading-7 text-ink-800">
+              Rockstar says GTA 6 launches on 19 November 2026 for PS5 and Xbox Series X|S.
+              Pre-load begins at local midnight on 12 November for eligible purchases. A PC version
+              has not been announced. Check the{" "}
+              <a href="https://support.rockstargames.com/articles/4QfG4FmZCf5W1gS8jy4UVT/grand-theft-auto-vi-platform-editions-and-versions-Platforms" className="font-semibold text-brand-700 underline underline-offset-2">official platform and pre-load FAQ</a>{" "}
+              for details, and see our <Link href="/where-to-buy" className="font-semibold text-brand-700 underline underline-offset-2">buying guide</Link> for purchase options.
+            </p>
+          </section>
+        )}
         <AdSlot id="silo-top" />
 
         {posts.length === 0 ? (
