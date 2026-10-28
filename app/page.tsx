@@ -6,7 +6,7 @@ import { categories } from "@/lib/taxonomy";
 import { faqItems } from "@/lib/faq";
 import { pageMetadata, breadcrumbJsonLd, absoluteUrl } from "@/lib/seo";
 import { JsonLd } from "@/components/JsonLd";
-import { Section, PageHeader, StatusPill } from "@/components/Layout";
+import { Section, StatusPill } from "@/components/Layout";
 import { PostCard } from "@/components/PostCard";
 import { Countdown } from "@/components/Countdown";
 import { EmailSignup } from "@/components/EmailSignup";
@@ -24,7 +24,7 @@ export const metadata = pageMetadata({
 const FACTS = [
   {
     q: "Can I download GTA 6 right now?",
-    a: "No. There is no playable or downloadable copy on any platform. Anyone offering one is selling you malware or nothing.",
+    a: "Not yet. Rockstar says pre-load begins 12 November 2026 for eligible purchases. Be cautious of sites promising an early download.",
     href: "/gta-6-download",
     linkLabel: "Read the full status",
   },
@@ -48,45 +48,71 @@ export default function HomePage() {
     .slice(0, 6);
 
   return (
-    <>
+    <div className="home-page">
       <JsonLd
         data={breadcrumbJsonLd([{ name: "Home", url: absoluteUrl("/") }])}
       />
 
-      <PageHeader
-        eyebrow="GTA 6 · download status"
-        title="GTA 6 cannot be downloaded yet — here is exactly where things stand"
-        description={siteConfig.statusHeadline}
-      >
-        <div className="flex flex-wrap items-center gap-4">
-          <StatusPill />
-          <Countdown target={siteConfig.releaseDate} onRelease="GTA 6 is out today" />
+      <section className="vi-hero" aria-labelledby="home-title">
+        <h1 id="home-title" className="sr-only">GTA 6 Download Hub — download status, release date and news</h1>
+        <div className="vi-poster">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/vi/poster.jpg" alt="" width="2560" height="1440" fetchPriority="high" className="vi-poster-art" />
         </div>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/gta-6-download" className="btn-primary">
-            Download status &amp; pre-order links
-          </Link>
-          <Link
-            href="/gta-6-system-requirements"
-            className="btn border border-ink-600 text-ink-100 hover:border-brand-400 hover:text-white"
-          >
-            System requirements
-          </Link>
+        <div className="vi-launch-row">
+          <Link href="/gta-6-release-date" className="vi-release"><span>Coming</span><strong>{new Date(siteConfig.releaseDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}</strong></Link>
+          <Link href="/gta-6-download" className="vi-pill">Check download status <span aria-hidden="true">↗</span></Link>
+          <p className="vi-platforms"><span>PlayStation 5</span><span>Xbox Series X|S</span></p>
         </div>
-      </PageHeader>
+        <p className="vi-independent">Your independent GTA 6 guide · Not affiliated with Rockstar Games</p>
+        <a href="#explore" className="vi-scroll" aria-label="Explore the GTA 6 guide"><span aria-hidden="true">⌄</span></a>
+      </section>
+
+      <section className="vi-statusbar" aria-label="Live release status">
+        <div><p className="home-kicker">The countdown is on</p><StatusPill /></div>
+        <Countdown target={siteConfig.releaseDate} onRelease="GTA 6 is out today" />
+      </section>
+
+      <section className="vi-trailer" id="explore" aria-labelledby="trailer-title">
+        <div className="vi-trailer-heading"><p className="home-kicker">Straight from Rockstar Games</p><h2 id="trailer-title">Welcome to Leonida.</h2></div>
+        <div className="vi-trailer-player">
+          <iframe
+            src="https://www.rockstargames.com/videoplayer?id=76orsa95&embed&autoplay=false&locale=en_us"
+            title="Grand Theft Auto VI — official trailer"
+            width="1280"
+            height="720"
+            loading="lazy"
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        </div>
+        <p className="vi-trailer-fallback"><a href="https://www.rockstargames.com/VI/launch-trailer" target="_blank" rel="noopener noreferrer">Open the trailer on Rockstar Games ↗</a></p>
+      </section>
+
+      <section className="home-editorial">
+        <div className="container-page home-editorial-grid">
+          <div><p className="home-kicker">Your guide to launch</p><h2>Big world.<br /><em>Clear answers.</em></h2></div>
+          <div><p>Vice City is calling. Before you dive in, get the facts on when you can play, where to buy safely, and what’s actually been confirmed.</p><Link href="/gta-6-release-date">Explore the release guide <span aria-hidden="true">↗</span></Link></div>
+        </div>
+      </section>
 
       <Section
-        title="The three questions this site exists to answer"
+        className="vi-essentials"
+        title="Everything before day one."
         description="Every page here separates what Rockstar has confirmed from what is speculation. No fake download buttons."
       >
         <div className="grid gap-5 md:grid-cols-3">
-          {FACTS.map((f) => (
-            <div key={f.q} className="card flex flex-col p-5">
+          {FACTS.map((f, index) => (
+            <div key={f.q} className="card vi-fact flex flex-col">
+              <Link href={f.href} className={`vi-fact-art vi-fact-art-${index}`} tabIndex={-1} aria-hidden="true"><span>0{index + 1}</span></Link>
+              <div className="vi-fact-copy flex flex-1 flex-col">
               <h3 className="text-base font-bold text-ink-950">{f.q}</h3>
               <p className="mt-2 flex-1 text-sm leading-6 text-ink-600">{f.a}</p>
               <Link href={f.href} className="mt-4 text-sm font-semibold text-brand-700 hover:text-brand-800">
                 {f.linkLabel} →
               </Link>
+              </div>
             </div>
           ))}
         </div>
@@ -95,13 +121,14 @@ export default function HomePage() {
       <AdSlot id="home-after-facts" />
 
       <Section
-        title="Latest GTA 6 news"
-        description="Rewritten and checked against the primary source, with the original link on every article."
+        className="home-news"
+        title="The latest from the hub."
+        description="Updates, guides and analysis with links to their sources."
         href="/news"
         hrefLabel="All news"
       >
         {latest.length === 0 ? (
-          <p className="text-sm text-ink-500">No published articles yet — run the ingest pipeline and review a draft.</p>
+          <p className="text-sm text-ink-500">New articles are on the way. Explore our guides for the latest confirmed information.</p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {latest.map((post) => (
@@ -111,12 +138,12 @@ export default function HomePage() {
         )}
       </Section>
 
-      <section className="bg-ink-100">
+      <section className="vi-topics">
         <div className="container-page grid gap-8 py-14 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-ink-950">Browse by topic</h2>
             <p className="mt-1.5 text-sm text-ink-600">
-              The hub is organised into silos so each answer links to the next question you will have.
+              Find the answers you need, from launch details to practical guides.
             </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
               {categories.map((c) => (
@@ -168,7 +195,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Section>
+      <Section className="vi-signup">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-center">
           <EmailSignup
             id="home-notify"
@@ -190,6 +217,6 @@ export default function HomePage() {
           </div>
         </div>
       </Section>
-    </>
+    </div>
   );
 }

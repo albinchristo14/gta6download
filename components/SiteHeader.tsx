@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export const PRIMARY_NAV = [
   { href: "/gta-6-download", label: "Download Status" },
@@ -22,6 +23,46 @@ export const SECONDARY_NAV = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuButton.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
+  if (pathname === "/") {
+    return (
+      <header className="vi-header">
+        <a className="vi-announcement" href="#explore">Official trailer <span>Watch here ↓</span></a>
+        <div className="vi-header-row">
+          <Link href="/" className="vi-wordmark" aria-label="GTA6Download home">VI<span>DOWNLOAD HUB</span></Link>
+          <div className="vi-header-actions">
+            <Link href="/where-to-buy" className="vi-pill">Where to buy ↗</Link>
+            <button ref={menuButton} type="button" className="vi-menu-button" aria-expanded={open} aria-controls="home-navigation" onClick={() => setOpen(v => !v)} aria-label={open ? "Close navigation" : "Open navigation"}>
+              <span aria-hidden="true">{open ? "×" : "☰"}</span>
+            </button>
+          </div>
+        </div>
+        <nav id="home-navigation" aria-label="Main" className="vi-navigation" hidden={!open}>
+          <div>{PRIMARY_NAV.map(n => <Link key={n.href} href={n.href} onClick={() => setOpen(false)}>{n.label}<span aria-hidden="true">↗</span></Link>)}</div>
+          <div>{SECONDARY_NAV.map(n => <Link key={n.href} href={n.href} onClick={() => setOpen(false)}>{n.label}<span aria-hidden="true">↗</span></Link>)}</div>
+          <p>Independent GTA 6 coverage. Not affiliated with Rockstar Games.</p>
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-ink-800 bg-ink-950/95 backdrop-blur supports-[backdrop-filter]:bg-ink-950/80">
@@ -54,6 +95,7 @@ export function SiteHeader() {
         </nav>
 
         <button
+          ref={menuButton}
           type="button"
           aria-expanded={open}
           aria-controls="mobile-nav"

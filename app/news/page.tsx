@@ -53,6 +53,12 @@ export default function NewsIndexPage() {
       {lead && (
         <Section title="Newest">
           <article className="card relative overflow-hidden p-6 sm:p-8">
+            {lead.frontmatter.image && (
+              <div className="-mx-6 -mt-6 mb-6 sm:-mx-8 sm:-mt-8">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={lead.frontmatter.image} alt="" width="640" height="360" loading="lazy" decoding="async" className="aspect-video w-full object-cover" />
+              </div>
+            )}
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">
               {categories.find((c) => c.id === lead.frontmatter.category)?.label}
             </p>
